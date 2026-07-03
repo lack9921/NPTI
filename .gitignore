@@ -1,0 +1,17 @@
+# NPTI 项目根目录 — 忽略无关文件
+node_modules/
+dist/
+target/
+*.jar
+*.log
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
+Thumbs.db
+*.class
+*.zip
+*.tar.gz

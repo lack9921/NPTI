@@ -56,6 +56,11 @@
       </button>
     </div>
 
+    <!-- 错误提示 -->
+    <div v-if="errorMsg" class="error-toast">
+      {{ errorMsg }}
+    </div>
+
     <!-- 提交后的加载动画 -->
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
@@ -84,6 +89,7 @@ const currentIndex = ref(0)    // 当前第几题（从 0 开始）
 const answers = ref([])        // 存储所有已选的答案
 const selectedAnswer = ref(null)  // 当前题目选中的选项
 const loading = ref(false)     // 是否正在提交
+const errorMsg = ref('')       // 错误提示信息
 
 // 计算属性：当前答题进度百分比
 const progressPercent = computed(() => {
@@ -98,10 +104,15 @@ onMounted(async () => {
     // 尝试从后端获取题目
     const res = await getQuestions()
     questions.value = res.data.data
+    // 成功后清除错误信息
+    errorMsg.value = ''
   } catch {
     // 如果后端没启动（报错），用内置假数据
     // 这样在没有后端的情况下也能演示
     questions.value = getMockQuestions()
+    errorMsg.value = '⚠️ 后端未连接，使用离线模式演示'
+    // 3 秒后自动清除提示
+    setTimeout(() => { errorMsg.value = '' }, 3000)
   }
 })
 
@@ -150,6 +161,8 @@ async function submitTest() {
     router.push({ name: 'Result', query: { data: JSON.stringify(res.data.data) } })
   } catch {
     // 后端不通时，用假数据演示结果
+    errorMsg.value = '⚠️ 后端未连接，使用离线结果演示'
+    setTimeout(() => { errorMsg.value = '' }, 3000)
     const mockResult = {
       nptiType: "INTJ",
       title: "建筑师型人格",
@@ -372,4 +385,19 @@ function getMockQuestions() {
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* 错误提示（顶部悬浮） */
+.error-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 107, 107, 0.9);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+}
 </style>

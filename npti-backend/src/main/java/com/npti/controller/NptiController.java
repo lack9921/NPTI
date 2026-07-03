@@ -5,6 +5,7 @@ import com.npti.dto.NptiResponse;
 import com.npti.dto.Result;
 import com.npti.service.NptiService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,15 +19,14 @@ import java.util.Map;
  * 1. GET  /api/test/questions  → 获取所有题目
  * 2. POST /api/test/submit     → 提交答案，获取测试结果
  *
- * @CrossOrigin 是跨域注解（如果前端单独跑需要这个）
- * 但我们在 CorsConfig.java 里统一配了全局跨域，所以这里不写也行
+ * 异常处理：
+ * - 如果提交的答案数量不对，返回 400 错误
+ * - 其他未捕获的异常由 Spring Boot 默认处理
  */
 @RestController
 @RequestMapping("/api/test")
 public class NptiController {
 
-    // @Autowired：让 Spring 自动帮我们创建 NptiService 的实例
-    // 不需要自己 new，直接用就行
     @Autowired
     private NptiService nptiService;
 
@@ -34,30 +34,60 @@ public class NptiController {
      * 获取题目列表
      * 
      * 前端调用：GET http://localhost:8080/api/test/questions
-     * 返回格式：Result<List<题目>>
-     * 每道题包含：id(题号) / text(题目文字) / options(四个选项)
+     * 
+     * 返回格式：
+     * {
+     *   "code": 200,
+     *   "message": "success",
+     *   "data": [ { "id": 1, "text": "...", "options": [...] }, ... ]
+     * }
      */
     @GetMapping("/questions")
     public Result<List<Map<String, Object>>> getQuestions() {
-        // 从 Service 层获取所有题目
-        List<Map<String, Object>> questions = nptiService.getQuestions();
-        // 用统一格式包装后返回
-        return Result.success(questions);
+        try {
+            List<Map<String, Object>> questions = nptiService.getQuestions();
+            return Result.success(questions);
+        } catch (Exception e) {
+            // 捕获所有异常，返回 500 错误
+            return Result.error("获取题目失败：" + e.getMessage());
+        }
     }
 
     /**
      * 提交答案并获取测试结果
      * 
      * 前端调用：POST http://localhost:8080/api/test/submit
-     * 请求体：{ "answers": ["A", "B", "A", ...] }（12 个答案）
-     * 返回格式：Result<NptiResponse>
-     * 包含：人格类型 / 标题 / 描述 / 维度得分 / 雷达图数据
+     * 
+     * 请求体：
+     * { "answers": ["A", "B", "A", "C", "D", "A", "B", "A", "A", "C", "D", "B"] }
+     * 
+     * 返回格式见 NptiResponse.java
      */
     @PostMapping("/submit")
-    public Result<NptiResponse> submitAnswers(@RequestBody NptiRequest request) {
-        // @RequestBody：自动把前端传来的 JSON 解析成 NptiRequest 对象
-        // 调用 Service 层的算分逻辑
-        NptiResponse response = nptiService.calculateResult(request.getAnswers());
-        return Result.success(response);
+    public Result<?> submitAnswers(@RequestBody NptiRequest request) {
+        // 1. 检查答案数量
+        List<String> answers = request.getAnswers();
+        if (answers == null) {
+            return Result.error("缺少答案数据");
+        }
+        if (answers.size() != 12) {
+            return Result.error("需要 12 个答案，实际收到 " + answers.size() + " 个");
+        }
+
+        // 2. 检查每个答案是否合法（只能是 A/B/C/D）
+        for (int i = 0; i < answers.size(); i++) {
+            String ans = answers.get(i).toUpperCase();
+            if (!List.of("A", "B", "C", "D").contains(ans)) {
+                return Result.error("第 " + (i + 1) + " 题的答案不合法：" + answers.get(i) + "，只允许 A/B/C/D");
+            }
+        }
+
+        // 3. 调用算分逻辑
+        try {
+            NptiResponse response = nptiService.calculateResult(answers);
+            return Result.success(response);
+        } catch (Exception e) {
+            return Result.error("计算结果失败：" + e.getMessage());
+        }
     }
 }
