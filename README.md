@@ -26,9 +26,13 @@
 ### 后端（Coder 2 执行）
 
 ```bash
-# 确保已安装 JDK 17+ 和 Maven
 cd npti-backend
-mvn spring-boot:run
+
+# Windows 执行（项目自带 mvnw.cmd，无需安装 Maven）
+mvnw spring-boot:run
+
+# Mac / Linux 执行
+./mvnw spring-boot:run
 ```
 
 后端启动后访问 `http://localhost:8080/api/test/questions` 验证。
