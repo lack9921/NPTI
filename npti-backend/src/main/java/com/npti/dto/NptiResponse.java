@@ -2,18 +2,38 @@ package com.npti.dto;
 
 import java.util.List;
 
+/**
+ * 后端计算完成后返回给前端的结果数据
+ * 
+ * JSON 示例：
+ * {
+ *   "nptiType": "INTJ",
+ *   "title": "建筑师型人格",
+ *   "description": "富有想象力、战略性、果断...",
+ *   "dimensions": [           ← 四个维度的详细得分
+ *     { "name": "精力来源", "abbr": "I", "score": 8, "opposite": "E" }
+ *   ],
+ *   "radarData": [            ← 给 ECharts 雷达图用的数据
+ *     { "name": "I/E", "value": 56 }
+ *   ]
+ * }
+ */
 public class NptiResponse {
-    private String nptiType;
-    private String title;
-    private String description;
-    private List<DimensionItem> dimensions;
-    private List<RadarItem> radarData;
+    private String nptiType;               // 四位字母：如 "INTJ"
+    private String title;                  // 中文标题：如 "建筑师型人格"
+    private String description;            // 详细的人格描述文字
+    private List<DimensionItem> dimensions; // 四个维度的得分明细
+    private List<RadarItem> radarData;     // 雷达图渲染数据
 
+    /**
+     * 某个维度的得分详情
+     * 比如：精力来源 I=8分（对面是 E），表示偏内向
+     */
     public static class DimensionItem {
-        private String name;
-        private String abbr;
-        private int score;
-        private String opposite;
+        private String name;      // 维度中文名："精力来源"
+        private String abbr;      // 得分高的一方："I"（内向）
+        private int score;        // 该维度总分（3-12 分）
+        private String opposite;  // 对立面简称："E"（外向）
 
         public DimensionItem(String name, String abbr, int score, String opposite) {
             this.name = name; this.abbr = abbr;
@@ -30,9 +50,14 @@ public class NptiResponse {
         public void setOpposite(String opposite) { this.opposite = opposite; }
     }
 
+    /**
+     * 雷达图数据点
+     * name: 维度缩写 "I/E"
+     * value: 归一化后的 0-100 分数
+     */
     public static class RadarItem {
-        private String name;
-        private int value;
+        private String name;   // 维度标签："I/E"、"N/S" 等
+        private int value;     // 得分（0-100），给 ECharts 渲染用
 
         public RadarItem(String name, int value) {
             this.name = name; this.value = value;
