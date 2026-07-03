@@ -1,13 +1,32 @@
+<!--
+  TestView.vue —— 答题页（核心交互页面）
+
+  流程：
+  1. 页面加载时从后端获取题目列表（getQuestions）
+  2. 显示当前题目和四个选项，点击选项选中
+  3. 点击"下一题"保存答案并切换到下一题
+  4. 全部 12 题答完后，点击"提交答案"调用后端算分接口
+  5. 拿到结果后跳转到结果页（/result）
+
+  如果后端没启动，自动使用内置的假数据（mock），不会卡住。
+-->
 <template>
   <div class="test-page">
+    <!-- 顶部进度条：显示答题进度 -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
     </div>
     <div class="progress-text">第 {{ currentIndex + 1 }} / {{ questions.length }} 题</div>
 
+    <!-- 题目卡片：显示当前题目和四个选项 -->
     <div class="question-card" v-if="questions.length > 0">
       <h2 class="q-text">{{ questions[currentIndex].text }}</h2>
       <div class="options">
+        <!--
+          v-for 循环渲染四个选项
+          :class 动态绑定样式：选中的选项高亮
+          @click 点击时记录选中的答案
+        -->
         <div
           v-for="opt in questions[currentIndex].options"
           :key="opt.key"
@@ -21,6 +40,7 @@
       </div>
     </div>
 
+    <!-- 底部按钮：上一题 / 下一题（最后一题显示"提交答案"） -->
     <div class="nav-buttons">
       <button
         class="nav-btn"
@@ -36,6 +56,7 @@
       </button>
     </div>
 
+    <!-- 提交后的加载动画 -->
     <div v-if="loading" class="loading-overlay">
       <div class="spinner"></div>
       <p>正在分析你的答案...</p>
@@ -44,49 +65,73 @@
 </template>
 
 <script setup>
+/**
+ * Vue 3 组合式 API
+ * ref：创建响应式数据（值改变时页面自动更新）
+ * computed：根据其他数据计算出的值
+ * onMounted：组件挂载后自动执行
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getQuestions, submitAnswers } from '../api/request.js'
 
 const router = useRouter()
-const questions = ref([])
-const currentIndex = ref(0)
-const answers = ref([])
-const selectedAnswer = ref(null)
-const loading = ref(false)
 
+// ======== 响应式数据（页面会根据这些值的变化自动刷新） ========
+
+const questions = ref([])      // 所有题目的数据
+const currentIndex = ref(0)    // 当前第几题（从 0 开始）
+const answers = ref([])        // 存储所有已选的答案
+const selectedAnswer = ref(null)  // 当前题目选中的选项
+const loading = ref(false)     // 是否正在提交
+
+// 计算属性：当前答题进度百分比
 const progressPercent = computed(() => {
   if (questions.value.length === 0) return 0
   return ((currentIndex.value + 1) / questions.value.length) * 100
 })
 
+// ======== 生命周期：页面加载时自动执行 ========
+
 onMounted(async () => {
   try {
+    // 尝试从后端获取题目
     const res = await getQuestions()
     questions.value = res.data.data
   } catch {
-    // 如果后端没启动，用假数据兜底
+    // 如果后端没启动（报错），用内置假数据
+    // 这样在没有后端的情况下也能演示
     questions.value = getMockQuestions()
   }
 })
 
+// ======== 交互方法 ========
+
+/** 点击选项时调用，记录选中的答案 */
 function selectOption(key) {
   selectedAnswer.value = key
 }
 
+/** 点击"下一题"或"提交"时调用 */
 function nextQuestion() {
-  if (!selectedAnswer.value) return
+  if (!selectedAnswer.value) return  // 没选答案就忽略
+
+  // 保存当前题的答案
   answers.value[currentIndex.value] = selectedAnswer.value
 
+  // 如果是最后一题，提交所有答案
   if (currentIndex.value === questions.value.length - 1) {
     submitTest()
     return
   }
 
+  // 否则切换到下一题
   currentIndex.value++
+  // 如果之前已经答过这题，恢复之前选的答案
   selectedAnswer.value = answers.value[currentIndex.value] || null
 }
 
+/** 回到上一题，保留已选的答案 */
 function prevQuestion() {
   if (currentIndex.value > 0) {
     answers.value[currentIndex.value] = selectedAnswer.value
@@ -95,13 +140,16 @@ function prevQuestion() {
   }
 }
 
+/** 提交所有答案到后端，获取测试结果 */
 async function submitTest() {
   loading.value = true
   try {
+    // 调用后端 API 计算性格类型
     const res = await submitAnswers(answers.value)
+    // 把结果数据通过 URL 参数传给结果页
     router.push({ name: 'Result', query: { data: JSON.stringify(res.data.data) } })
   } catch {
-    // 后端不通时用假数据演示
+    // 后端不通时，用假数据演示结果
     const mockResult = {
       nptiType: "INTJ",
       title: "建筑师型人格",
@@ -115,8 +163,8 @@ async function submitTest() {
       radarData: [
         { name: "I/E", value: 56 },
         { name: "N/S", value: 67 },
-        { name: "T/F", value: 44 },
-        { name: "J/P", value: 56 }
+        { name: "F/T", value: 44 },
+        { name: "P/J", value: 56 }
       ]
     }
     router.push({ name: 'Result', query: { data: JSON.stringify(mockResult) } })
@@ -124,6 +172,13 @@ async function submitTest() {
   loading.value = false
 }
 
+// ======== 假数据（当后端没启动时使用） ========
+
+/**
+ * 内置 12 道题的假数据
+ * 结构和后端返回的格式完全一致
+ * 这样即使后端没启动，前端也能正常演示
+ */
 function getMockQuestions() {
   return [
     { id: 1, text: "周末你更倾向于？", options: [
@@ -179,6 +234,7 @@ function getMockQuestions() {
 </script>
 
 <style scoped>
+/* 整个页面布局 */
 .test-page {
   max-width: 640px;
   margin: 0 auto;
@@ -187,6 +243,8 @@ function getMockQuestions() {
   display: flex;
   flex-direction: column;
 }
+
+/* 顶部进度条 */
 .progress-bar {
   height: 6px;
   background: rgba(255,255,255,0.1);
@@ -206,6 +264,8 @@ function getMockQuestions() {
   font-size: 14px;
   margin-bottom: 40px;
 }
+
+/* 题目卡片 */
 .question-card {
   flex: 1;
 }
@@ -215,6 +275,8 @@ function getMockQuestions() {
   margin-bottom: 30px;
   text-align: center;
 }
+
+/* 选项列表 */
 .options {
   display: flex;
   flex-direction: column;
@@ -235,10 +297,12 @@ function getMockQuestions() {
   background: rgba(255,255,255,0.1);
   border-color: rgba(255,255,255,0.2);
 }
+/* 选中的选项高亮 */
 .option.selected {
   background: rgba(102,126,234,0.2);
   border-color: #667eea;
 }
+/* 选项旁边的字母标识（A/B/C/D） */
 .option-key {
   width: 32px;
   height: 32px;
@@ -257,6 +321,8 @@ function getMockQuestions() {
 .option-text {
   font-size: 16px;
 }
+
+/* 底部导航按钮 */
 .nav-buttons {
   display: flex;
   gap: 12px;
@@ -284,6 +350,8 @@ function getMockQuestions() {
 .nav-btn.primary:disabled {
   background: rgba(255,255,255,0.1);
 }
+
+/* 提交后的全屏加载动画 */
 .loading-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
