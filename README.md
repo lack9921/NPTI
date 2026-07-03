@@ -1,46 +1,29 @@
-# NPTI — Network Personality Test Indicator
+# NPFJ — Network Personality Factor Indicator
 
-> 大一程序设计实践项目 · 选题二：MBTI 测试系统（自创 NPTI 测评体系）
-> 截止日期：2026 年 7 月 5 日
+> 大一程序设计实践项目 · 选题二：MBTI 测试系统
+> 自创 **NPFJ 二分树路由测评体系**
+>
+> 核心创新：动态路由二分树 + 隐性权重五维心理雷达图
+>
+> 技术栈：Python Flask（后端）+ Vue 3（前端）
 
 ---
 
-## 📋 项目简介
-
-基于 **Java Spring Boot + Vue 3** 的在线人格测评系统。
-
-用户回答 12 道题目，系统通过评分算法计算出用户的 NPTI 人格类型（4 个维度 × 2 种倾向 = 16 种人格），并以雷达图可视化展示结果。
-
-## 👥 团队分工
-
-| 角色 | 负责内容 | 主要文件 |
-|------|---------|---------|
-| **Coder 1** | Vue 3 前端（页面 + 路由 + 调接口） | `npti-frontend/src/views/*` |
-| **Coder 2** | Spring Boot 后端（API + 算分逻辑 + 题库） | `npti-backend/src/main/java/com/npti/*` |
-| **Coder 3** | ECharts 图表 + 联调 + 测试 + 黏合 | `RadarChart.vue` + 联调 |
-| **成员 D** | 项目报告（同步写，截图素材） | `docs/` 参考开发文档 |
-| **成员 E** | 演示视频（2-5 分钟，展示流程 + 雷达图） | — |
-
 ## 🚀 快速启动
 
-### 后端（Coder 2 执行）
+### 后端（Python Flask）
 
 ```bash
-cd npti-backend
-
-# Windows 执行（项目自带 mvnw.cmd，无需安装 Maven）
-mvnw spring-boot:run
-
-# Mac / Linux 执行
-./mvnw spring-boot:run
+cd backend
+pip install -r requirements.txt
+python app.py
 ```
 
-后端启动后访问 `http://localhost:8080/api/test/questions` 验证。
+后端启动后访问 `http://localhost:8080/api/health` 验证。
 
-### 前端（Coder 1 执行）
+### 前端（Vue 3）
 
 ```bash
-# 确保已安装 Node.js 18+
 cd npti-frontend
 npm install
 npm run dev
@@ -48,171 +31,79 @@ npm run dev
 
 前端启动后访问 `http://localhost:3000`。
 
-> **开发时**：Vite 自动把 `/api/*` 请求转发到后端 `localhost:8080`，不需要手动处理后端地址。
+> 开发时 Vite 自动把 `/api/*` 转发到后端 `localhost:8080`。
 
-### 前后端联调
+## 🧠 核心架构
 
-前端页面操作完整流程：首页 → 答题（12 题）→ 提交 → 结果页（含雷达图）。
+### 二分树路由系统
+
+```
+Stage 0 (基准校准) ── 5 题
+        │
+Stage 1 (连接拓扑) ── 5 题 ─→ 左 N / 右 S
+        │
+Stage 2 (探针模式) ── 5 题 ─→ 左 P / 右 L
+        │
+Stage 3 (路由逻辑) ── 5 题 ─→ 左 F / 右 R
+        │
+Stage 4 (输出格式) ── 5 题 ─→ 左 J / 右 W
+        │
+      16 种人格类型 + 五维心理雷达图
+```
+
+### 隐性权重五维图
+
+每道题的选项背后隐藏 5 个心理维度的权重分，用户作答时不知道自己在被"测心"：
+
+| 维度 | 低端 | 高端 |
+|------|------|------|
+| 🔋 精神续航 | 高频刷新（多巴胺） | 深度长效（内啡肽） |
+| 🧲 社交磁场 | 同温层渴望 | 单机沙盒 |
+| 🛠️ 秩序洁癖 | 绝对掌控 | 随机探索 |
+| ⚖️ 压力解压阀 | 赛博充电 | 情绪断联 |
+| 🧠 脑力劳作 | 掘根刨底 | 直通结论 |
 
 ## 📁 项目结构
 
 ```
-NPTI/
-├── npti-backend/               # Spring Boot 后端
-│   ├── pom.xml                 # Maven 依赖配置
-│   └── src/main/java/com/npti/
-│       ├── NptiApplication.java    # 启动入口
-│       ├── config/CorsConfig.java  # 跨域配置
-│       ├── controller/         # API 接口层
-│       │   └── NptiController.java
-│       ├── service/            # 业务逻辑层（核心算分）
-│       │   └── NptiService.java
-│       └── dto/                # 数据传输对象（接口契约）
-│           ├── Result.java
-│           ├── NptiRequest.java
-│           └── NptiResponse.java
+NPFJ/
+├── backend/                     # Python Flask 后端
+│   ├── app.py                   # API 入口（4 个端点）
+│   ├── engine.py                # 二分树状态机 + 权重累加器
+│   ├── pools.json               # 题库文件（16 个题池 × 5 题）
+│   └── requirements.txt         # pip 依赖
 │
-├── npti-frontend/              # Vue 3 前端
-│   ├── index.html              # HTML 入口
-│   ├── vite.config.js          # Vite 配置（含代理）
-│   ├── package.json            # npm 依赖
+├── npti-frontend/               # Vue 3 前端（不变）
 │   └── src/
-│       ├── main.js             # Vue 应用入口
-│       ├── App.vue             # 根组件
-│       ├── router/index.js     # 路由配置
-│       ├── api/request.js      # API 请求封装
-│       ├── views/              # 页面组件
-│       │   ├── HomeView.vue    # 首页
-│       │   ├── TestView.vue    # 答题页（核心）
-│       │   └── ResultView.vue  # 结果页
-│       ├── components/         # 可复用组件
-│       │   └── RadarChart.vue  # ECharts 雷达图
-│       └── assets/style.css    # 全局样式
+│       ├── views/               # 首页 / 答题页 / 结果页
+│       ├── components/          # 雷达图组件（5 维自适应）
+│       └── api/request.js       # 新 API 封装
 │
-├── docs/                       # 文档
-│   └── 开发实战手册.md          # 完整开发指南
-└── README.md                   # 本文件
+└── README.md
 ```
 
-## 🧠 核心算分逻辑
+## 📡 API 接口
 
-```
-12 道题 → 4 个维度（每 3 题测一个维度）
+### `GET /api/pool/<id>` — 获取题池
+### `POST /api/session/create` — 创建会话
+### `POST /api/pool/<id>/submit` — 提交 5 题答案
+### `POST /api/result` — 最终结算
 
-维度            低分(<=6)   高分(>6)
-──────────────────────────────
-精力来源 (1-3)    E (外向)    I (内向)
-认知方式 (4-6)    S (实感)    N (直觉)
-决策方式 (7-9)    T (理性)    F (感性)
-生活态度 (10-12)  J (计划)    P (随性)
+## 📝 填充题库
 
-每位字母 (A=1分, B=2分, C=3分, D=4分)
-每个维度 3 题总分 3~12 分
-```
+编辑 `backend/pools.json`，每个题池的 `questions` 数组为空，需填充 5 题。
 
-组合成 16 种人格类型：ISTJ / ISFJ / INFJ / INTJ / ISTP / ISFP / INFP / INTP / ESTP / ESFP / ENFP / ENTP / ESTJ / ESFJ / ENFJ / ENTJ
-
-## 🛠️ 技术栈
-
-| 层 | 技术 |
-|----|------|
-| 后端框架 | Spring Boot 3.2 + Java 17 |
-| 前端框架 | Vue 3 (Composition API) + Vite 5 |
-| 路由 | Vue Router 4 |
-| 图表 | ECharts 5 |
-| HTTP 请求 | Axios |
-| 协作工具 | VS Code + Live Share |
-
-## 📦 打包（最后提交时用）
-
-### 方案一：独立部署（推荐）
-
-```bash
-# 1. 前端打包
-cd npti-frontend
-npm run build    # 生成 dist/ 文件夹
-
-# 2. 把 dist/ 移到后端的 static 目录
-cp -r dist/ ../npti-backend/src/main/resources/static/
-
-# 3. 后端打成可执行 jar
-cd ../npti-backend
-mvn clean package -DskipTests
-
-# 4. 运行（所有页面都在这个 jar 里）
-java -jar target/npti-backend-1.0.0.jar
-```
-
-之后访问 `http://localhost:8080` 即可看到完整页面，无需单独启动前端。
-
-### 方案二：分开运行
-
-直接分别启动前后端即可（开发时用这种方式）。
-
-## 📝 核心 API 接口
-
-### GET /api/test/questions
-
-获取所有题目（不含答案）。
-
-**返回格式：**
+每题格式：
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": [
-    { "id": 1, "text": "周末你更倾向于？", "options": [
-      { "key": "A", "text": "约朋友出去玩" },
-      { "key": "B", "text": "在家打游戏或看书" },
-      { "key": "C", "text": "参加线下活动聚会" },
-      { "key": "D", "text": "一个人安静待着" }
-    ]}
-  ]
-}
-```
-
-### POST /api/test/submit
-
-提交 12 个答案，获取测试结果。
-
-**请求体：**
-```json
-{ "answers": ["A", "B", "A", "C", "D", "A", "B", "A", "A", "C", "D", "B"] }
-```
-
-**返回格式：**
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "nptiType": "INTJ",
-    "title": "建筑师型人格",
-    "description": "富有想象力、战略性、果断...",
-    "dimensions": [
-      { "name": "精力来源", "abbr": "I", "score": 8, "opposite": "E" }
-    ],
-    "radarData": [
-      { "name": "I/E", "value": 56 }
-    ]
+  "id": 1,
+  "text": "题目文字",
+  "options": {
+    "A": { "text": "选项A文字", "route": "L", "weights": [2,0,1,0,0] },
+    "B": { "text": "选项B文字", "route": "R", "weights": [0,2,0,1,1] }
   }
 }
 ```
 
-## ✨ 加分项建议
-
-1. **自创 NPTI 维度**（强烈推荐）—— 在 `NptiService.java` 里加一套程序员专属维度的算分（缩进派系/作息习惯等），报告中说明这是"自创测评体系"
-2. **更多样化的雷达图** —— 修改 `RadarChart.vue` 的颜色和样式
-3. **测试结果分享功能** —— 生成分享卡片或截图
-4. **题库扩展** —— 在 QUESTIONS 里加更多题目，从中随机抽取 12 题
-
-## 🔧 常见问题
-
-**Q: 前端报跨域错误？**
-A: Vite 开发时已经配了代理（`/api` → `localhost:8080`），正常情况下不会触发。如果部署时遇到，确保后端 `CorsConfig.java` 配置正确。
-
-**Q: 后端启动时报端口被占用？**
-A: 在 `application.yml` 里把 `server.port` 改为 8081（或其他可用端口），同时修改前端 `vite.config.js` 里 proxy 的 target 端口。
-
-**Q: 如何改题目内容？**
-A: 直接修改 `NptiService.java` 里的 `QUESTIONS`（静态代码块部分），注意每 3 题属于同一个维度。
+- `route`: L 或 R，决定二分树走向
+- `weights`: 五维权重 [精神续航, 社交磁场, 秩序洁癖, 压力解压阀, 脑力劳作]，每题每维 0-2 分

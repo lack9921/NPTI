@@ -1,253 +1,217 @@
 <!--
-  TestView.vue —— 答题页（核心交互页面）
+  TestView.vue —— NPFJ 动态路由答题页
 
-  流程：
-  1. 页面加载时从后端获取题目列表（getQuestions）
-  2. 显示当前题目和四个选项，点击选项选中
-  3. 点击"下一题"保存答案并切换到下一题
-  4. 全部 12 题答完后，点击"提交答案"调用后端算分接口
-  5. 拿到结果后跳转到结果页（/result）
+  新的答题流程：
+  1. 进入页面 → 创建会话 → 加载第一个题池（基准校准，5 题）
+  2. 用户作答 5 题 → 点击提交 → 后端路由到下一题池
+  3. 加载下一个题池 → 继续作答
+  4. 重复直到 is_final = true → 跳转结果页
 
-  如果后端没启动，自动使用内置的假数据（mock），不会卡住。
+  每个题池固定 5 题，选项 A/B，不暴露任何权重信息给前端。
 -->
 <template>
   <div class="test-page">
-    <!-- 顶部进度条：显示答题进度 -->
-    <div class="progress-bar">
-      <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-    </div>
-    <div class="progress-text">第 {{ currentIndex + 1 }} / {{ questions.length }} 题</div>
-
-    <!-- 题目卡片：显示当前题目和四个选项 -->
-    <div class="question-card" v-if="questions.length > 0">
-      <h2 class="q-text">{{ questions[currentIndex].text }}</h2>
-      <div class="options">
-        <!--
-          v-for 循环渲染四个选项
-          :class 动态绑定样式：选中的选项高亮
-          @click 点击时记录选中的答案
-        -->
-        <div
-          v-for="opt in questions[currentIndex].options"
-          :key="opt.key"
-          class="option"
-          :class="{ selected: selectedAnswer === opt.key }"
-          @click="selectOption(opt.key)"
+    <!-- 顶部：路径进度和阶段信息 -->
+    <div class="stage-header">
+      <div class="stage-badge" v-if="poolInfo">阶段 {{ poolInfo.stage }} / 4</div>
+      <div class="pool-name" v-if="poolInfo">{{ poolInfo.name }}</div>
+      <div class="pool-desc" v-if="poolInfo">{{ poolInfo.description }}</div>
+      <!-- 路径指示器 -->
+      <div class="path-indicator">
+        <span
+          v-for="(step, i) in pathSteps"
+          :key="i"
+          class="path-dot"
+          :class="{ active: step.done, current: step.active }"
         >
-          <span class="option-key">{{ opt.key }}</span>
-          <span class="option-text">{{ opt.text }}</span>
-        </div>
+          {{ step.done ? step.letter : i + 1 }}
+        </span>
       </div>
     </div>
 
-    <!-- 底部按钮：上一题 / 下一题（最后一题显示"提交答案"） -->
-    <div class="nav-buttons">
-      <button
-        class="nav-btn"
-        :disabled="currentIndex === 0"
-        @click="prevQuestion"
-      >上一题</button>
-      <button
-        class="nav-btn primary"
-        :disabled="!selectedAnswer"
-        @click="nextQuestion"
-      >
-        {{ currentIndex === questions.length - 1 ? '提交答案' : '下一题' }}
-      </button>
+    <!-- 加载中 -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
     </div>
 
-    <!-- 错误提示 -->
-    <div v-if="errorMsg" class="error-toast">
-      {{ errorMsg }}
-    </div>
+    <!-- 题目区域 -->
+    <template v-if="!loading && currentQuestions.length > 0">
+      <!-- 进度：题内进度 -->
+      <div class="progress-bar">
+        <div class="progress-fill" :style="{ width: ((answeredCount) / 5 * 100) + '%' }"></div>
+      </div>
+      <div class="progress-text">第 {{ answeredCount + 1 }} / 5 题</div>
+
+      <!-- 当前题目 -->
+      <div class="question-card">
+        <h2 class="q-text">{{ currentQuestion.text }}</h2>
+        <div class="options">
+          <div
+            v-for="opt in currentQuestion.options"
+            :key="opt.key"
+            class="option"
+            :class="{ selected: selectedAnswer === opt.key }"
+            @click="selectOption(opt.key)"
+          >
+            <span class="option-key">{{ opt.key }}</span>
+            <span class="option-text">{{ opt.text }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="nav-buttons">
+        <button class="nav-btn primary" :disabled="!selectedAnswer" @click="nextQuestion">
+          {{ isLastQuestion ? '提交本组' : '下一题' }}
+        </button>
+      </div>
+    </template>
 
     <!-- 提交后的加载动画 -->
-    <div v-if="loading" class="loading-overlay">
+    <div v-if="submitting" class="loading-overlay">
       <div class="spinner"></div>
       <p>正在分析你的答案...</p>
     </div>
+
+    <!-- 错误提示 -->
+    <div v-if="errorMsg" class="error-toast">{{ errorMsg }}</div>
   </div>
 </template>
 
 <script setup>
-/**
- * Vue 3 组合式 API
- * ref：创建响应式数据（值改变时页面自动更新）
- * computed：根据其他数据计算出的值
- * onMounted：组件挂载后自动执行
- */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getQuestions, submitAnswers } from '../api/request.js'
+import { createSession, getPool, submitPool, getResult } from '../api/request.js'
 
 const router = useRouter()
 
-// ======== 响应式数据（页面会根据这些值的变化自动刷新） ========
+// ======== 状态 ========
+const sessionId = ref(null)
+const poolId = ref(0)
+const poolInfo = ref(null)
+const currentQuestions = ref([])
+const currentQIndex = ref(0)
+const answers = ref([])      // 当前题池的 5 个答案
+const selectedAnswer = ref(null)
+const pathSteps = ref([])    // [{ direction, letter, done, active }]
+const loading = ref(true)
+const submitting = ref(false)
+const errorMsg = ref('')
 
-const questions = ref([])      // 所有题目的数据
-const currentIndex = ref(0)    // 当前第几题（从 0 开始）
-const answers = ref([])        // 存储所有已选的答案
-const selectedAnswer = ref(null)  // 当前题目选中的选项
-const loading = ref(false)     // 是否正在提交
-const errorMsg = ref('')       // 错误提示信息
-
-// 计算属性：当前答题进度百分比
-const progressPercent = computed(() => {
-  if (questions.value.length === 0) return 0
-  return ((currentIndex.value + 1) / questions.value.length) * 100
+// ======== 计算属性 ========
+const currentQuestion = computed(() => {
+  return currentQuestions.value[currentQIndex.value] || {}
+})
+const answeredCount = computed(() => {
+  return answers.value.filter(a => a !== undefined && a !== null).length
+})
+const isLastQuestion = computed(() => {
+  return currentQIndex.value === currentQuestions.value.length - 1
 })
 
-// ======== 生命周期：页面加载时自动执行 ========
-
+// ======== 生命周期 ========
 onMounted(async () => {
   try {
-    // 尝试从后端获取题目
-    const res = await getQuestions()
-    questions.value = res.data.data
-    // 成功后清除错误信息
-    errorMsg.value = ''
+    // 1. 创建会话
+    const sessionRes = await createSession()
+    sessionId.value = sessionRes.data.session_id
+
+    // 2. 加载第一个题池
+    const firstPoolId = sessionRes.data.first_pool
+    await loadPool(firstPoolId)
   } catch {
-    // 如果后端没启动（报错），用内置假数据
-    // 这样在没有后端的情况下也能演示
-    questions.value = getMockQuestions()
-    errorMsg.value = '⚠️ 后端未连接，使用离线模式演示'
-    // 3 秒后自动清除提示
-    setTimeout(() => { errorMsg.value = '' }, 3000)
+    errorMsg.value = '⚠️ 后端未连接，请确保后端已启动'
+    loading.value = false
   }
 })
 
-// ======== 交互方法 ========
+// ======== 方法 ========
 
-/** 点击选项时调用，记录选中的答案 */
-function selectOption(key) {
-  selectedAnswer.value = key
-}
-
-/** 点击"下一题"或"提交"时调用 */
-function nextQuestion() {
-  if (!selectedAnswer.value) return  // 没选答案就忽略
-
-  // 保存当前题的答案
-  answers.value[currentIndex.value] = selectedAnswer.value
-
-  // 如果是最后一题，提交所有答案
-  if (currentIndex.value === questions.value.length - 1) {
-    submitTest()
-    return
-  }
-
-  // 否则切换到下一题
-  currentIndex.value++
-  // 如果之前已经答过这题，恢复之前选的答案
-  selectedAnswer.value = answers.value[currentIndex.value] || null
-}
-
-/** 回到上一题，保留已选的答案 */
-function prevQuestion() {
-  if (currentIndex.value > 0) {
-    answers.value[currentIndex.value] = selectedAnswer.value
-    currentIndex.value--
-    selectedAnswer.value = answers.value[currentIndex.value] || null
-  }
-}
-
-/** 提交所有答案到后端，获取测试结果 */
-async function submitTest() {
+/** 加载指定题池 */
+async function loadPool(id) {
   loading.value = true
   try {
-    // 调用后端 API 计算性格类型
-    const res = await submitAnswers(answers.value)
-    // 把结果数据通过 URL 参数传给结果页
-    router.push({ name: 'Result', query: { data: JSON.stringify(res.data.data) } })
+    const res = await getPool(id)
+    const data = res.data
+    poolId.value = data.id
+    poolInfo.value = { stage: data.stage, name: data.name, description: data.description }
+    currentQuestions.value = data.questions
+    currentQIndex.value = 0
+    answers.value = []
+    selectedAnswer.value = null
+
+    // 更新路径指示器
+    updatePathSteps(data.stage)
   } catch {
-    // 后端不通时，用假数据演示结果
-    errorMsg.value = '⚠️ 后端未连接，使用离线结果演示'
-    setTimeout(() => { errorMsg.value = '' }, 3000)
-    const mockResult = {
-      nptiType: "INTJ",
-      title: "建筑师型人格",
-      description: "富有想象力、战略性、果断。你是一个天生的规划者，总能从全局视角看到问题的本质，并制定出最优方案。",
-      dimensions: [
-        { name: "精力来源", abbr: "I", score: 8, opposite: "E" },
-        { name: "认知方式", abbr: "N", score: 9, opposite: "S" },
-        { name: "决策方式", abbr: "T", score: 7, opposite: "F" },
-        { name: "生活态度", abbr: "J", score: 8, opposite: "P" }
-      ],
-      radarData: [
-        { name: "I/E", value: 56 },
-        { name: "N/S", value: 67 },
-        { name: "F/T", value: 44 },
-        { name: "P/J", value: 56 }
-      ]
-    }
-    router.push({ name: 'Result', query: { data: JSON.stringify(mockResult) } })
+    errorMsg.value = '⚠️ 加载题库失败'
   }
   loading.value = false
 }
 
-// ======== 假数据（当后端没启动时使用） ========
+/** 更新路径指示器 */
+function updatePathSteps(stage) {
+  const total = 5  // 基准校准 + 4 个维度
+  const steps = []
+  const stageNames = ['基准', '连接', '探针', '路由', '输出']
+  for (let i = 0; i < total; i++) {
+    const letter = pathSteps.value[i]?.letter
+    steps.push({
+      label: stageNames[i] || `阶段${i}`,
+      done: i < stage,
+      active: i === stage,
+      letter: letter || null,
+    })
+  }
+  pathSteps.value = steps
+}
 
-/**
- * 内置 12 道题的假数据
- * 结构和后端返回的格式完全一致
- * 这样即使后端没启动，前端也能正常演示
- */
-function getMockQuestions() {
-  return [
-    { id: 1, text: "周末你更倾向于？", options: [
-      { key: "A", text: "约朋友出去玩" }, { key: "B", text: "在家打游戏或看书" },
-      { key: "C", text: "参加线下活动聚会" }, { key: "D", text: "一个人安静待着" }
-    ]},
-    { id: 2, text: "在团队讨论中，你通常？", options: [
-      { key: "A", text: "积极发言，带动气氛" }, { key: "B", text: "认真听，偶尔插话" },
-      { key: "C", text: "主导话题走向" }, { key: "D", text: "默默记笔记，心里有数" }
-    ]},
-    { id: 3, text: "你交朋友的方式是？", options: [
-      { key: "A", text: "主动认识，扩宽圈子" }, { key: "B", text: "通过共同朋友认识" },
-      { key: "C", text: "在各种场合都能自来熟" }, { key: "D", text: "随缘，不主动社交" }
-    ]},
-    { id: 4, text: "你更喜欢哪种类型的问题？", options: [
-      { key: "A", text: "有明确答案的具体问题" }, { key: "B", text: "需要想象力的开放问题" },
-      { key: "C", text: "跟实际生活相关的实用问题" }, { key: "D", text: "充满可能性的抽象问题" }
-    ]},
-    { id: 5, text: "看说明书时，你通常会？", options: [
-      { key: "A", text: "一步一步照着做" }, { key: "B", text: "扫一眼大概，自己摸索" },
-      { key: "C", text: "只关注关键步骤" }, { key: "D", text: "凭直觉操作，出问题再看" }
-    ]},
-    { id: 6, text: "你更容易记住？", options: [
-      { key: "A", text: "具体发生过的事情细节" }, { key: "B", text: "当时的感受和整体氛围" },
-      { key: "C", text: "事实和数据" }, { key: "D", text: "对未来的联想和可能" }
-    ]},
-    { id: 7, text: "朋友向你倾诉烦恼，你第一反应是？", options: [
-      { key: "A", text: "帮ta分析问题出在哪" }, { key: "B", text: "理解ta的感受，表示支持" },
-      { key: "C", text: "直接给解决方案" }, { key: "D", text: "陪着ta，说什么不重要" }
-    ]},
-    { id: 8, text: "做重要决定时，你更依赖？", options: [
-      { key: "A", text: "逻辑分析和事实依据" }, { key: "B", text: "内心的价值观和感受" },
-      { key: "C", text: "效率和收益最大化" }, { key: "D", text: "这件事对人际关系的影响" }
-    ]},
-    { id: 9, text: "别人对你提出批评，你通常？", options: [
-      { key: "A", text: "先看ta说得有没有道理" }, { key: "B", text: "有点受伤，但会反思" },
-      { key: "C", text: "如果没道理就直接忽略" }, { key: "D", text: "在意对方的感受多于对错" }
-    ]},
-    { id: 10, text: "你的书桌/工作区通常是？", options: [
-      { key: "A", text: "整整齐齐，每样东西有固定位置" }, { key: "B", text: "有自己的一套乱序但找得到" },
-      { key: "C", text: "定期收拾，但日常会乱" }, { key: "D", text: "随心所欲，懒得整理" }
-    ]},
-    { id: 11, text: "你更喜欢哪种生活方式？", options: [
-      { key: "A", text: "提前制定好计划按部就班" }, { key: "B", text: "有大方向但细节随缘" },
-      { key: "C", text: "排好优先级按重要程度来" }, { key: "D", text: "想到什么做什么，随性" }
-    ]},
-    { id: 12, text: "面对未预期的变化，你的态度是？", options: [
-      { key: "A", text: "不太喜欢，希望按原计划走" }, { key: "B", text: "可以接受，随机应变" },
-      { key: "C", text: "有点烦躁但能调整" }, { key: "D", text: "拥抱变化，觉得很有趣" }
-    ]}
-  ]
+/** 选中选项 */
+function selectOption(key) {
+  selectedAnswer.value = key
+}
+
+/** 下一题或提交本组 */
+async function nextQuestion() {
+  if (!selectedAnswer.value) return
+
+  answers.value[currentQIndex.value] = selectedAnswer.value
+
+  if (!isLastQuestion.value) {
+    // 同一题池内翻到下一题
+    currentQIndex.value++
+    selectedAnswer.value = null
+    return
+  }
+
+  // 最后一道题 → 提交整个题池
+  await submitCurrentPool()
+}
+
+/** 提交当前题池的 5 个答案 */
+async function submitCurrentPool() {
+  submitting.value = true
+  try {
+    const res = await submitPool(poolId.value, answers.value)
+    const data = res.data
+
+    if (data.is_final) {
+      // 所有阶段完成 → 获取最终结果
+      const resultRes = await getResult()
+      router.push({ name: 'Result', query: { data: JSON.stringify(resultRes.data) } })
+    } else if (data.next_pool !== null && data.next_pool !== undefined) {
+      // 路由到下一题池
+      await loadPool(data.next_pool)
+    }
+  } catch {
+    errorMsg.value = '⚠️ 提交失败，请重试'
+    setTimeout(() => { errorMsg.value = '' }, 3000)
+  }
+  submitting.value = false
 }
 </script>
 
 <style scoped>
-/* 整个页面布局 */
 .test-page {
   max-width: 640px;
   margin: 0 auto;
@@ -255,10 +219,67 @@ function getMockQuestions() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
-/* 顶部进度条 */
+/* 阶段头部 */
+.stage-header {
+  text-align: center;
+  margin-bottom: 30px;
+  width: 100%;
+}
+.stage-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 4px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+.pool-name {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.pool-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 16px;
+}
+
+/* 路径指示器 */
+.path-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.path-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+.path-dot.active {
+  background: rgba(102,126,234,0.3);
+  border-color: #667eea;
+}
+.path-dot.current {
+  background: rgba(102,126,234,0.5);
+  border-color: #764ba2;
+  box-shadow: 0 0 12px rgba(102,126,234,0.4);
+}
+
+/* 进度条 */
 .progress-bar {
+  width: 100%;
   height: 6px;
   background: rgba(255,255,255,0.1);
   border-radius: 3px;
@@ -272,14 +293,16 @@ function getMockQuestions() {
   transition: width 0.3s ease;
 }
 .progress-text {
+  width: 100%;
   text-align: center;
   color: rgba(255,255,255,0.5);
   font-size: 14px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
-/* 题目卡片 */
+/* 题目 */
 .question-card {
+  width: 100%;
   flex: 1;
 }
 .q-text {
@@ -289,7 +312,6 @@ function getMockQuestions() {
   text-align: center;
 }
 
-/* 选项列表 */
 .options {
   display: flex;
   flex-direction: column;
@@ -299,7 +321,7 @@ function getMockQuestions() {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 18px 20px;
   background: rgba(255,255,255,0.05);
   border: 2px solid rgba(255,255,255,0.1);
   border-radius: 12px;
@@ -310,22 +332,20 @@ function getMockQuestions() {
   background: rgba(255,255,255,0.1);
   border-color: rgba(255,255,255,0.2);
 }
-/* 选中的选项高亮 */
 .option.selected {
   background: rgba(102,126,234,0.2);
   border-color: #667eea;
 }
-/* 选项旁边的字母标识（A/B/C/D） */
 .option-key {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255,255,255,0.1);
   border-radius: 50%;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 .option.selected .option-key {
@@ -335,8 +355,9 @@ function getMockQuestions() {
   font-size: 16px;
 }
 
-/* 底部导航按钮 */
+/* 按钮 */
 .nav-buttons {
+  width: 100%;
   display: flex;
   gap: 12px;
   margin-top: 30px;
@@ -364,7 +385,7 @@ function getMockQuestions() {
   background: rgba(255,255,255,0.1);
 }
 
-/* 提交后的全屏加载动画 */
+/* 加载动画 */
 .loading-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -376,6 +397,15 @@ function getMockQuestions() {
   gap: 20px;
   z-index: 100;
 }
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: rgba(255,255,255,0.6);
+}
 .spinner {
   width: 48px;
   height: 48px;
@@ -386,7 +416,7 @@ function getMockQuestions() {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* 错误提示（顶部悬浮） */
+/* 错误提示 */
 .error-toast {
   position: fixed;
   top: 20px;
