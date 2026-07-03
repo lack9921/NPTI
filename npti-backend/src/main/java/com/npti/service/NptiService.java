@@ -189,7 +189,7 @@ public class NptiService {
         PERSONALITY_DATA.put("ISTJ", new String[]{"检查员型人格",
             "务实、负责、可靠。你是一个做事有条理、注重细节的人，喜欢按规则和流程办事。在团队中是值得信赖的中坚力量。"});
         PERSONALITY_DATA.put("ISFJ", new String[]{"守护者型人格",
-            "温暖、体贴、有责任感。你非常关心身边的人，善于察言观色，乐于默默付出。是团队里的"后勤保障"。"});
+            "温暖、体贴、有责任感。你非常关心身边的人，善于察言观色，乐于默默付出。是团队里的「后勤保障」。"});
         PERSONALITY_DATA.put("INFJ", new String[]{"提倡者型人格",
             "理想主义、有洞察力、有使命感。你善于理解复杂的人性和抽象的概念，总是想为世界带来积极的改变。"});
         PERSONALITY_DATA.put("INTJ", new String[]{"建筑师型人格",
@@ -202,7 +202,7 @@ public class NptiService {
         PERSONALITY_DATA.put("INFP", new String[]{"调停者型人格",
             "理想主义、充满热情、富有创造力。你内心深处有坚定的价值观，总在寻找生活的意义和真实的情感连接。"});
         PERSONALITY_DATA.put("INTP", new String[]{"逻辑学家型人格",
-            "创新、理性、喜欢理论。你天生爱思考，对抽象的概念和理论充满好奇。典型的"书呆子天才"。"});
+            "创新、理性、喜欢理论。你天生爱思考，对抽象的概念和理论充满好奇。典型的「书呆子天才」。"});
 
         // ---- 外倾（E）系列 ----
         PERSONALITY_DATA.put("ESTP", new String[]{"企业家型人格",
@@ -212,12 +212,12 @@ public class NptiService {
         PERSONALITY_DATA.put("ENFP", new String[]{"竞选者型人格",
             "热情、富有创造力、自由奔放。你充满好奇心和能量，善于发现各种可能性。能感染身边的每一个人。"});
         PERSONALITY_DATA.put("ENTP", new String[]{"辩论家型人格",
-            "聪明、好奇、善辩。你热爱挑战和头脑风暴，总能从不同角度看待问题。是让人又爱又恨的"杠精"。"});
+            "聪明、好奇、善辩。你热爱挑战和头脑风暴，总能从不同角度看待问题。是让人又爱又恨的「杠精」。"});
 
         PERSONALITY_DATA.put("ESTJ", new String[]{"总经理型人格",
             "高效、果断、有领导力。你是一个天生的管理者，注重秩序和效率。做事雷厉风行，执行力极强。"});
         PERSONALITY_DATA.put("ESFJ", new String[]{"执政官型人格",
-            "热情、有责任感、重视和谐。你非常注重人际关系，乐于为他人服务。是团队里的"大家长"。"});
+            "热情、有责任感、重视和谐。你非常注重人际关系，乐于为他人服务。是团队里的「大家长」。"});
         PERSONALITY_DATA.put("ENFJ", new String[]{"主人公型人格",
             "有魅力、有感染力、利他主义。你天生就是领导者，善于发现并挖掘他人的潜能。总能让团队变得更好。"});
         PERSONALITY_DATA.put("ENTJ", new String[]{"指挥官型人格",
