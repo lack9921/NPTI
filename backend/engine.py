@@ -116,6 +116,8 @@ class NPFJEngine:
                 "options": [
                     {"key": "A", "text": q["options"]["A"]["text"]},
                     {"key": "B", "text": q["options"]["B"]["text"]},
+                    {"key": "C", "text": q["options"]["C"]["text"]},
+                    {"key": "D", "text": q["options"]["D"]["text"]},
                 ]
             }
             safe_questions.append(safe_q)
