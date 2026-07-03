@@ -25,7 +25,7 @@ NPTI/
 │       ├── api/            # API 请求封装
 │       └── assets/         # 静态资源
 ├── npti-backend/           # Spring Boot 后端
-│   └── src/main/java/com/stu/npti/
+│   └── src/main/java/com/npti/
 │       ├── controller/     # API 接口
 │       ├── service/        # 业务逻辑（算分）
 │       ├── dto/            # 数据传输对象
