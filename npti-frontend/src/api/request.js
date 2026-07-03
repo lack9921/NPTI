@@ -1,28 +1,40 @@
 /**
- * API 请求封装 —— 统一管理所有后端接口的调用
- * 
- * 使用 axios 库发送 HTTP 请求。
+ * API 请求封装 —— NPFJ 新版 API
+ *
+ * 新流程：
+ * 1. POST /api/session/create → 获取 session_id 和第一个题池 ID
+ * 2. GET  /api/pool/<id>      → 获取当前题池的题目
+ * 3. POST /api/pool/<id>/submit → 提交 5 个答案，获取路由结果
+ * 4. 重复 2-3 直到 is_final = true
+ * 5. POST /api/result         → 获取最终人格类型 + 五维雷达图
+ *
  * 开发时 Vite 会把 /api/* 的请求自动转发到后端 localhost:8080
- * （参见 vite.config.js 里的 proxy 配置）
  */
 import axios from 'axios'
 
-// 创建一个 axios 实例，设置基础 URL 和超时时间
 const api = axios.create({
-  baseURL: '/api',        // 所有请求前面自动加 /api
-  timeout: 10000           // 10 秒超时，超过就报错
+  baseURL: '/api',
+  timeout: 15000
 })
 
-/** 获取所有题目（GET 请求） */
-export function getQuestions() {
-  return api.get('/test/questions')
+/** 创建新测试会话 */
+export function createSession() {
+  return api.post('/session/create')
 }
 
-/** 提交答案获取结果（POST 请求） */
-export function submitAnswers(answers) {
-  // 参数 answers 是一个数组，比如 ["A", "B", "A", ...]
-  // axios.post 会自动转成 JSON 格式发给后端
-  return api.post('/test/submit', { answers })
+/** 获取指定题池的题目 */
+export function getPool(poolId) {
+  return api.get(`/pool/${poolId}`)
+}
+
+/** 提交当前题池的 5 个答案 */
+export function submitPool(poolId, answers) {
+  return api.post(`/pool/${poolId}/submit`, { answers })
+}
+
+/** 最终结算，获取人格 + 五维图数据 */
+export function getResult() {
+  return api.post('/result')
 }
 
 export default api

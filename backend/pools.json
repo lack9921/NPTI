@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "dimensions": ["N/S", "P/L", "F/R", "J/W"],
+    "dimension_names": ["连接拓扑", "探针模式", "路由逻辑", "输出格式"],
+    "weight_dims": ["精神续航", "社交磁场", "秩序洁癖", "压力解压阀", "脑力劳作"],
+    "total_pools": 16,
+    "questions_per_pool": 5
+  },
+  "pools": {
+    "0": {
+      "stage": 0,
+      "name": "基准校准",
+      "description": "基础网络行为模式扫描",
+      "questions": []
+    },
+    "1": {
+      "stage": 1,
+      "name": "连接拓扑 - N/S",
+      "description": "公网互联还是深潜内网",
+      "route_map": { "L": 2, "R": 3 },
+      "questions": []
+    },
+    "2": {
+      "stage": 2,
+      "name": "探针模式 - P/L",
+      "description": "主动发包还是端口监听",
+      "route_map": { "L": 4, "R": 5 },
+      "questions": []
+    },
+    "3": {
+      "stage": 2,
+      "name": "探针模式 - P/L",
+      "description": "主动发包还是端口监听",
+      "route_map": { "L": 6, "R": 7 },
+      "questions": []
+    },
+    "4": {
+      "stage": 3,
+      "name": "路由逻辑 - F/R",
+      "description": "极速转发还是精准路由",
+      "route_map": { "L": 8, "R": 9 },
+      "questions": []
+    },
+    "5": {
+      "stage": 3,
+      "name": "路由逻辑 - F/R",
+      "description": "极速转发还是精准路由",
+      "route_map": { "L": 10, "R": 11 },
+      "questions": []
+    },
+    "6": {
+      "stage": 3,
+      "name": "路由逻辑 - F/R",
+      "description": "极速转发还是精准路由",
+      "route_map": { "L": 12, "R": 13 },
+      "questions": []
+    },
+    "7": {
+      "stage": 3,
+      "name": "路由逻辑 - F/R",
+      "description": "极速转发还是精准路由",
+      "route_map": { "L": 14, "R": 15 },
+      "questions": []
+    },
+    "8": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "9": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "10": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "11": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "12": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "13": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "14": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    },
+    "15": {
+      "stage": 4,
+      "name": "输出格式 - J/W",
+      "description": "结构化还是通配符",
+      "route_map": { "L": "J", "R": "W" },
+      "questions": []
+    }
+  }
+}
