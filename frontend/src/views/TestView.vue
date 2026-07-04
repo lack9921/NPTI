@@ -5,7 +5,6 @@
     
     <div class="glow-layer" :style="{ background: bgGlow }"></div>
 
-    
     <div class="stage-header">
       <n-tag :bordered="false" size="small" :style="{ background: accentColor + '18', color: accentColor, border: 'none', fontWeight: 600, letterSpacing: '1px' }">
         阶段 {{ poolInfo?.stage }} / 4
@@ -14,7 +13,6 @@
       <div class="pool-desc">{{ poolInfo?.description }}</div>
       <div class="q-ref" v-if="currentQuestion.id">#{{ currentQuestion.id }} · Pool {{ poolId }}</div>
 
-      
       <n-steps :current="currentStepIndex" :status="'process'" size="small" class="steps-bar">
         <n-step title="能量" />
         <n-step title="参与" />
@@ -23,13 +21,11 @@
       </n-steps>
     </div>
 
-    
     <div v-if="loading" class="loading-state">
       <n-spin size="medium" />
       <p>加载中...</p>
     </div>
 
-    
     <template v-if="!loading && currentQuestions.length > 0">
       <div class="q-area">
         <div class="q-progress-text">{{ answeredCount }} / 5</div>
@@ -69,7 +65,6 @@
       </div>
     </template>
 
-    
     <div v-if="submitting" class="loading-overlay">
       <n-spin size="large" />
       <p style="margin-top: 16px; color: rgba(255,255,255,0.6);">分析中...</p>
@@ -233,7 +228,6 @@ async function submitCurrentPool() {
   align-items: center; justify-content: center; z-index: 100;
 }
 
-/* 按钮行 */
 .btn-row {
   display: flex; gap: 10px; position: relative; z-index: 1; margin-top: 4px;
 }
