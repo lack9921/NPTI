@@ -39,7 +39,7 @@ if %errorlevel% neq 0 (
 )
 
 echo   → 开始打包（约 1-2 分钟）...
-pyinstaller build.spec --clean --onefile
+"%APPDATA%\Python\Python313\Scripts\pyinstaller" build.spec --clean --onefile
 
 if %errorlevel% neq 0 (
     echo ❌ 打包失败
