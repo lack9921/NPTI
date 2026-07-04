@@ -3,8 +3,9 @@
   使用 Naive UI 组件
 -->
 <template>
-  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2 }">
-    <div class="bg-layer" :style="{ background: bgGradient }"></div>
+  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2, 'background': pageBg }">
+    <!-- 动态渐变背景层：全屏背景随阶段变化 -->
+    <div class="bg-layer" :style="{ background: bgGlow }"></div>
 
     <!-- 阶段信息 -->
     <div class="stage-header">
@@ -35,7 +36,7 @@
       <div class="q-area">
         <div class="q-progress-text">{{ answeredCount }} / 5</div>
         <n-progress type="line" :percentage="answeredCount * 20" :border-radius="3" :height="5"
-          :color="accentColor" :rail-color="'rgba(255,255,255,0.06)'" :indicator-placement="'inside'"
+          :color="accentColor" :rail-color="'rgba(255,255,255,0.06)'" :show-indicator="false"
           class="q-progress" />
 
         <h2 class="q-text">{{ currentQuestion.text }}</h2>
@@ -90,16 +91,17 @@ const submitting = ref(false)
 const errorMsg = ref('')
 
 const stageColors = [
-  { a: '#4facfe', b: '#2563eb', bg: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.06) 0%, transparent 60%)' },
-  { a: '#2dd4bf', b: '#0d9488', bg: 'radial-gradient(ellipse at 50% 20%, rgba(45,212,191,0.05) 0%, transparent 60%)' },
-  { a: '#a78bfa', b: '#7c3aed', bg: 'radial-gradient(ellipse at 40% 20%, rgba(167,139,250,0.05) 0%, transparent 60%)' },
-  { a: '#f472b6', b: '#ec4899', bg: 'radial-gradient(ellipse at 60% 20%, rgba(244,114,182,0.05) 0%, transparent 60%)' },
+  { a: '#4facfe', b: '#2563eb', glow: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.15) 0%, transparent 60%)', page: 'linear-gradient(135deg, #0a1628 0%, #0f1f3a 50%, #0a1628 100%)' },
+  { a: '#2dd4bf', b: '#0d9488', glow: 'radial-gradient(ellipse at 50% 20%, rgba(45,212,191,0.12) 0%, transparent 60%)', page: 'linear-gradient(135deg, #0a1a1a 0%, #0f2d2a 50%, #0a1a1a 100%)' },
+  { a: '#a78bfa', b: '#7c3aed', glow: 'radial-gradient(ellipse at 40% 20%, rgba(167,139,250,0.12) 0%, transparent 60%)', page: 'linear-gradient(135deg, #140a28 0%, #1f153a 50%, #140a28 100%)' },
+  { a: '#f472b6', b: '#ec4899', glow: 'radial-gradient(ellipse at 60% 20%, rgba(244,114,182,0.12) 0%, transparent 60%)', page: 'linear-gradient(135deg, #280a1a 0%, #3a1528 50%, #280a1a 100%)' },
 ]
 
 const stageIndex = computed(() => Math.max(0, (poolInfo.value?.stage || 1) - 1))
 const accentColor = computed(() => stageColors[stageIndex.value]?.a || '#4facfe')
 const accentColor2 = computed(() => stageColors[stageIndex.value]?.b || '#2563eb')
-const bgGradient = computed(() => stageColors[stageIndex.value]?.bg || '')
+const pageBg = computed(() => stageColors[stageIndex.value]?.page || 'linear-gradient(135deg, #0f0c29, #302b63)')
+const bgGlow = computed(() => stageColors[stageIndex.value]?.glow || '')
 
 const currentQuestion = computed(() => currentQuestions.value[currentQIndex.value] || {})
 const answeredCount = computed(() => answers.value.filter(a => a != null).length)
@@ -161,6 +163,7 @@ async function submitCurrentPool() {
 .test-page {
   max-width: 520px; margin: 0 auto; padding: 30px 20px;
   min-height: 100vh; display: flex; flex-direction: column; position: relative;
+  transition: background 0.6s ease;
 }
 .bg-layer {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
