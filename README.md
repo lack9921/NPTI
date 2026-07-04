@@ -1,6 +1,6 @@
 # NPFJ — 使用方式
 
-### 🅰 一体模式（老师验收用）
+### 🅰 一体模式
 
 开箱即用，一个命令跑全部。不需要 Node.js。
 
@@ -13,7 +13,7 @@ python run.py
 
 ---
 
-### 🅱 开发模式（团队协作用）
+### 🅱 开发模式
 
 前后端分离，改了哪边 hot reload 哪边。需要 Node.js。
 
@@ -29,7 +29,7 @@ cd frontend && npm install && npm run dev
 
 ---
 
-### 🅲 交付包构建模式（交作业用）
+### 🅲 构建模式
 
 一键打包成 zip，老师解压即用。
 
@@ -42,15 +42,3 @@ bash build.sh
 ```
 
 在项目根目录生成 `NPFJ-交付包.zip`。
-
----
-
-### 🅳 纯 API 模式（调试用）
-
-只有后端接口，没有前端页面。
-
-```bash
-cd backend && pip install flask flask-cors && python app.py
-```
-
-浏览器打开 `http://localhost:8080/api/health` 验证。
