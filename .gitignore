@@ -1,6 +1,5 @@
-# NPTI 项目根目录 — 忽略无关文件
+# 不需要追踪的
 node_modules/
-dist/
 target/
 *.jar
 *.log
@@ -17,10 +16,8 @@ Thumbs.db
 *.tar.gz
 __pycache__/
 
-# PyInstaller 构建产物
-backend/dist/
+# PyInstaller 工作目录（不是最终产物）
 backend/build/
-*.exe
 
-# 前端构建产物
+# 前端构建产物（EXE 已内嵌）
 frontend/dist/
