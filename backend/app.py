@@ -102,15 +102,15 @@ def create_session():
     返回：
     {
         "session_id": "abc12345",
-        "first_pool": 0,
+        "first_pool": 1,
         "pool_info": { ... }
     }
     """
     sid, sess = _get_or_create_session()
-    pool_info = engine.get_pool_info(0)
+    pool_info = engine.get_pool_info(1)
     return jsonify({
         "session_id": sid,
-        "first_pool": 0,
+        "first_pool": 1,
         "pool_info": pool_info,
     })
 

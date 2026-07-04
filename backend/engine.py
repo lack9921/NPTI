@@ -111,8 +111,8 @@ class NPFJEngine:
         """创建新会话（用户开始测试时调用）"""
         return {
             "path": [],               # 路由路径，如 ["L", "R", "L"]
-            "pool_history": [0],      # 走过的题池，从 0（基准校准）开始
-            "current_pool": 0,        # 当前题池 ID
+            "pool_history": [1],      # 走过的题池，从 1（能量开关）开始
+            "current_pool": 1,        # 当前题池 ID
             "weights": [0, 0, 0, 0, 0],  # 五维权重累加
             "done": False,            # 是否已完成
         }
@@ -247,8 +247,7 @@ class NPFJEngine:
 
         # 从路径生成 4 位字母
         path = session["path"]  # ["L", "L", "L", "L", "L"]
-        # Stage 0（基准校准）不参与人格判定，只取最近 4 个方向
-        path = path[-4:] if len(path) >= 4 else path
+        # 路径正好 4 步（Stage 1-4），全部用于人格判定
         letters = []
         for i, direction in enumerate(path):
             if i < len(DIM_LETTERS):
