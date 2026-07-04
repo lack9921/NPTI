@@ -2,13 +2,28 @@
 NPFJ 后端 API — Flask 实现
 
 权重计算由独立的 calculator.py 处理，与路由引擎解耦。
+
+一体运行模式：
+  python run.py               # 从项目根目录启动（推荐）
+  python backend/app.py       # 纯 API 模式（开发时用，无前端界面）
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from engine import NPFJEngine
 from calculator import WeightCalculator
+import os
 import uuid
+
+# ============================================================
+#  路径配置
+# ============================================================
+# 自动探测前端 dist 目录：优先项目根 frontend/dist，回退 backend/static
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJ_DIR = os.path.dirname(_BACKEND_DIR)
+_DIST_DIR = os.path.join(_PROJ_DIR, "frontend", "dist")
+if not os.path.isdir(_DIST_DIR):
+    _DIST_DIR = os.path.join(_BACKEND_DIR, "static")
 
 app = Flask(__name__)
 CORS(app)
@@ -145,7 +160,45 @@ def get_result():
     return jsonify(result)
 
 
+# ============================================================
+#  前端静态文件服务（一体运行模式）
+# ============================================================
+
+# ============================================================
+#  前端静态文件服务（一体运行模式）
+# ============================================================
+
+@app.route("/")
+def serve_index():
+    """首页：serve frontend/dist/index.html"""
+    return send_from_directory(_DIST_DIR, "index.html")
+
+
+@app.route("/<path:path>")
+def serve_spa(path):
+    """
+    SPA 全路由处理：
+      1. 如果是 dist 中的静态文件（JS/CSS 等），直接返回
+      2. 其余所有非 /api/ 路径 → index.html（SPA fallback）
+    """
+    filepath = os.path.join(_DIST_DIR, path)
+    if os.path.exists(filepath) and os.path.isfile(filepath):
+        return send_from_directory(_DIST_DIR, path)
+    return send_from_directory(_DIST_DIR, "index.html")
+
+
+# ============================================================
+#  入口
+# ============================================================
+
 if __name__ == "__main__":
-    print("🚀 NPFJ 后端启动成功！")
+    dist_exists = os.path.isdir(_DIST_DIR)
+    print("🚀 NPFJ 服务启动成功！")
     print(f"  题库加载: {len(engine.pools)} 个题池")
+    if dist_exists:
+        print(f"  前端资源: {_DIST_DIR} (已加载)")
+        print(f"  打开浏览器 → http://localhost:8080")
+    else:
+        print("  ⚠️ 没有检测到前端 dist 目录，仅 API 模式可用")
+        print(f"  请执行: cd frontend && npm install && npm run build")
     app.run(host="0.0.0.0", port=8080, debug=True)

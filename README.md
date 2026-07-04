@@ -65,77 +65,68 @@ Stage 4 (输出格式) ── 5 题 ── 答完 → 左走 J / 右走 W
 
 ---
 
-## 快速启动
+## 快速启动（推荐）
 
-### 一行命令启动后端
+### 前提条件
+
+- Python 3.10+（[下载](https://www.python.org/downloads/)）
+
+### 一行命令启动（🔥 一体模式）
 
 ```bash
+pip install flask flask-cors   # 首次需要，安装后端依赖
+python run.py                  # 一键启动！
+```
+
+浏览器打开 **http://localhost:8080**，就能看到测试首页了。
+
+> 如果遇到 `ModuleNotFoundError: No module named 'flask'`，先执行 `pip install flask flask-cors`。
+
+### 分步启动（开发用）
+
+```bash
+# 终端 1：启动后端
 cd backend
 pip install flask flask-cors
 python app.py
-```
 
-浏览器打开 `http://localhost:8080/api/health`，看到 `{"status": "ok"}` 就算成功了。
-
-### 一行命令启动前端
-
-```bash
+# 终端 2：启动前端（需要 Node.js）
 cd frontend
 npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:3000`，就能看到测试首页了。
-
 ---
 
-## 详细运行步骤
+## 构建一体包（提交作业用）
 
-### 第一步：装 Python（如果没装）
-
-- 去 https://www.python.org/downloads/ 下载 Python 3.10+
-- 安装时勾选 **"Add Python to PATH"**
-- 装完后打开终端（PowerShell / CMD），验证：
+如果想得到一个单文件启动的交付包，执行以下命令：
 
 ```bash
-python --version
-```
-显示 `Python 3.10.x` 或更高就行。
-
-### 第二步：启动后端
-
-```bash
-cd backend
-pip install flask flask-cors   # 第一次运行需要，装依赖
-python app.py
-```
-
-看到以下输出说明启动成功：
-```
-🚀 NPFJ 后端启动成功！
-  题库加载: 16 个题池
- * Running on http://127.0.0.1:8080
-```
-
-**这个终端窗口要一直开着**，不要关。
-
-### 第三步：启动前端（新开一个终端）
-
-```bash
+# 1. 构建前端（需要 Node.js）
 cd frontend
-npm install              # 第一次运行需要，装依赖
-npm run dev
+npm install
+npm run build
+
+# 2. 回到项目根目录，直接启动（前端已被后端一体托管）
+cd ..
+python run.py
 ```
 
-看到以下输出说明启动成功：
-```
-VITE v5.x.x ready in xxx ms
-➜  Local: http://localhost:3000
-```
+然后浏览器打开 **http://localhost:8080** 即可使用。
 
-### 第四步：测试
+打包提交时只需要以下内容：
 
-浏览器打开 `http://localhost:3000` → 点击"开始测试" → 答题 → 出结果
+```
+组号-题目二.zip/
+├── run.py                  <- 🏁 入口：python run.py
+├── backend/                <- Python 后端
+│   ├── app.py, engine.py, calculator.py, ...
+│   └── requirements.txt
+├── frontend/
+│   └── dist/               <- 编译好的前端（npm run build 产物）
+└── docs/                   <- 报告素材
+```
 
 ---
 
@@ -143,32 +134,43 @@ VITE v5.x.x ready in xxx ms
 
 ```
 NPTI/
-├── backend/                        ← Python 后端（核心代码在这里）
-│   ├── app.py                      ← Flask 服务器，定义了 4 个 API 接口
-│   ├── engine.py                   ← 二分树状态机 + 五维权重累加（核心算法）
-│   ├── pools.json                  ← ⭐ 题库文件（你需要填这个）
-│   └── requirements.txt            ← Python 依赖清单
+├── run.py                           ← 🏁 一键启动入口：python run.py
+├──
+├── backend/                         ← Python 后端（核心代码在这里）
+│   ├── app.py                       ← Flask 服务器（含一体模式的静态文件服务）
+│   ├── engine.py                    ← 二分树状态机 + 五维权重累加（核心算法）
+│   ├── calculator.py                ← 权重计算工具（独立于路由引擎）
+│   ├── pools.json                   ← ⭐ 题库文件
+│   ├── reports.json                 ← 16 种人格分析报告
+│   └── requirements.txt             ← Python 依赖清单
 │
-├── frontend/                  ← Vue 3 前端
+├── frontend/                        ← Vue 3 前端
+│   ├── dist/                        ← 🔥 编译产物（npm run build 生成）
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.js              ← 开发代理配置（/api → localhost:8080）
+│   ├── vite.config.js               ← 开发代理配置（/api → localhost:8080）
 │   └── src/
-│       ├── main.js                 ← 入口
-│       ├── App.vue                 ← 根组件
-│       ├── router/index.js         ← 路由（首页/答题/结果）
-│       ├── api/request.js          ← 封装好的 API 调用
+│       ├── main.js                  ← 入口
+│       ├── App.vue                  ← 根组件
+│       ├── router/index.js          ← 路由（首页/答题/结果）
+│       ├── api/request.js           ← 封装好的 API 调用
 │       ├── views/
-│       │   ├── HomeView.vue        ← 首页
-│       │   ├── TestView.vue        ← 答题页（动态路由）
-│       │   └── ResultView.vue      ← 结果页（五维雷达图）
+│       │   ├── HomeView.vue         ← 首页
+│       │   ├── TestView.vue         ← 答题页（动态路由）
+│       │   └── ResultView.vue       ← 结果页（五维雷达图）
 │       ├── components/
-│       │   └── RadarChart.vue      ← 雷达图组件（自适应维度）
-│       └── assets/style.css        ← 全局样式
+│       │   └── RadarChart.vue       ← 雷达图组件（自适应维度）
+│       └── assets/style.css         ← 全局样式
 │
-├── docs/开发实战手册.md            ← 开发指南（团队参考）
+├── docs/                            ← 文档和报告素材
+│   ├── NPFJ-16人格完整定义.md
+│   ├── NPFJ-16人格分析报告.md
+│   ├── NPFJ-题库全文.md
+│   ├── NPFJ-题库设计说明书.md
+│   └── 报告材料.md
+│
 ├── .gitignore
-└── README.md                       ← 本文件
+└── README.md                        ← 本文件
 ```
 
 ---
