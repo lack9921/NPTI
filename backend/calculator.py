@@ -34,16 +34,19 @@ class WeightCalculator:
         """
         从累积权重计算五维雷达图数据（归一化到 0-100）。
         
-        当前公式：线性归一化
-        （你可以替换成 sigmoid / 对数 / 自定义映射）
-        
-        最大可能值 = max_per_question * total_questions = 2 * 20 = 40
+        以实际累积值的最大值为基准，让图表撑满显示区域。
         """
-        max_possible = self.max_per_question * self.total_questions
+        if not state or len(state) < 5:
+            return [{"name": n, "value": 0} for n in self.dim_names]
+        
+        # 以实际最大值或 20 中较高的那个为基准
+        # 这样即使有人全选同一方向的选项，也不会顶到 100 显得撑爆
+        actual_max = max(state[:5])
+        base = max(20, actual_max)
         radar = []
         for i in range(5):
             raw = state[i] if i < len(state) else 0
-            normalized = min(100, int(raw / max_possible * 100)) if max_possible > 0 else 50
+            normalized = min(100, int(raw / base * 100)) if base > 0 else 50
             radar.append({"name": self.dim_names[i], "value": normalized})
         return radar
 
