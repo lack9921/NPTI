@@ -172,18 +172,18 @@ async function submitCurrentPool() {
 
 .stage-header { text-align: center; margin-bottom: 20px; position: relative; z-index: 1; }
 .pool-name { font-size: 20px; font-weight: 700; margin-top: 10px; margin-bottom: 2px; }
-.pool-desc { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+.pool-desc { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
 .q-ref { font-size: 11px; color: rgba(255,255,255,0.18); font-family: monospace; margin-bottom: 12px; letter-spacing: 1px; }
 .steps-bar { max-width: 320px; margin: 0 auto; }
 
 .loading-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 300px; gap: 16px; position: relative; z-index: 1;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.6);
 }
 
 .q-area { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; }
-.q-progress-text { text-align: right; font-size: 12px; color: rgba(255,255,255,0.25); margin-bottom: 4px; }
+.q-progress-text { text-align: right; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
 .q-progress { margin-bottom: 20px; }
 .q-text {
   font-size: 19px; line-height: 1.6; margin-bottom: 22px;
