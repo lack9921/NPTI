@@ -59,11 +59,18 @@
         </div>
       </div>
 
-      <n-button type="primary" size="large" :disabled="!selectedAnswer"
-        :style="selectedAnswer ? { background: `linear-gradient(135deg, ${accentColor}, ${accentColor2})`, borderColor: 'transparent' } : {}"
-        block round @click="nextQuestion">
-        {{ isLastQuestion ? '提交本组' : '下一题' }}
-      </n-button>
+      <div class="btn-row">
+        <n-button ghost round size="large" :disabled="currentQIndex === 0"
+          :style="{ borderColor: 'rgba(255,255,255,0.15)', color: currentQIndex === 0 ? 'rgba(255,255,255,0.2)' : accentColor }"
+          @click="prevQuestion" class="half-btn">
+          上一题
+        </n-button>
+        <n-button type="primary" size="large" :disabled="!selectedAnswer"
+          :style="selectedAnswer ? { background: `linear-gradient(135deg, ${accentColor}, ${accentColor2})`, borderColor: 'transparent' } : {}"
+          class="half-btn" round @click="nextQuestion">
+          {{ isLastQuestion ? '提交本组' : '下一题' }}
+        </n-button>
+      </div>
     </template>
 
     <!-- 提交遮罩 -->
@@ -151,6 +158,15 @@ function nextQuestion() {
   submitCurrentPool()
 }
 
+function prevQuestion() {
+  if (currentQIndex.value <= 0) return
+  // 保存当前答案再回退
+  answers.value[currentQIndex.value] = selectedAnswer.value
+  currentQIndex.value--
+  // 恢复上一题的选中状态
+  selectedAnswer.value = answers.value[currentQIndex.value] || null
+}
+
 async function submitCurrentPool() {
   submitting.value = true
   try {
@@ -223,5 +239,13 @@ async function submitCurrentPool() {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(15,12,41,0.9); display: flex; flex-direction: column;
   align-items: center; justify-content: center; z-index: 100;
+}
+
+/* 按钮行 */
+.btn-row {
+  display: flex; gap: 10px; position: relative; z-index: 1; margin-top: 4px;
+}
+.half-btn {
+  flex: 1;
 }
 </style>
