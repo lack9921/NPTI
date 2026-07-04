@@ -8,6 +8,40 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from engine import NPFJEngine
 from calculator import WeightCalculator
+import os
+
+# ============================================================
+#  静态文件服务（集成 Vue 前端打包产物）
+#  开发时：Vite 代理 /api → 8080
+#  生产时：Flask 直接提供 / 页面
+# ============================================================
+
+# PyInstaller 打包后 _MEIPASS 指向临时解压目录
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 优先找 frontend/dist，找不到就找 static
+STATIC_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend', 'dist')
+if not os.path.exists(STATIC_DIR):
+    STATIC_DIR = os.path.join(BASE_DIR, 'static')
+
+if os.path.exists(STATIC_DIR):
+    from flask import send_from_directory
+    @app.route('/')
+    def index():
+        return send_from_directory(STATIC_DIR, 'index.html')
+    @app.route('/assets/<path:filename>')
+    def assets(filename):
+        return send_from_directory(os.path.join(STATIC_DIR, 'assets'), filename)
+    # Vue Router 历史模式：所有非 API 路径返回 index.html
+    @app.errorhandler(404)
+    def not_found(e):
+        if not request.path.startswith('/api'):
+            return send_from_directory(STATIC_DIR, 'index.html')
+        return e
+import sys
 import uuid
 
 app = Flask(__name__)

@@ -16,3 +16,12 @@ Thumbs.db
 *.zip
 *.tar.gz
 __pycache__/
+
+# PyInstaller 构建产物
+backend/dist/
+backend/build/
+backend/*.spec
+*.exe
+
+# 前端构建产物
+frontend/dist/
