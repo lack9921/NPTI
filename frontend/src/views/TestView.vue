@@ -3,9 +3,11 @@
   使用 Naive UI 组件
 -->
 <template>
-  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2, 'background': pageBg }">
-    <!-- 动态渐变背景层：全屏背景随阶段变化 -->
-    <div class="bg-layer" :style="{ background: bgGlow }"></div>
+  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2 }">
+    <!-- 全屏动态背景 -->
+    <div class="bg-layer" :style="{ background: pageBg }"></div>
+    <!-- 光晕 -->
+    <div class="glow-layer" :style="{ background: bgGlow }"></div>
 
     <!-- 阶段信息 -->
     <div class="stage-header">
@@ -174,6 +176,10 @@ async function submitCurrentPool() {
 }
 .bg-layer {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; transition: background 0.6s ease; z-index: 0;
+}
+.glow-layer {
+  position: fixed; top: 0; left: 0; right: 0; height: 60vh;
   pointer-events: none; transition: all 0.6s ease; z-index: 0;
 }
 

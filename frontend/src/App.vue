@@ -47,10 +47,11 @@ const themeOverrides = {
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
 body {
+  background: #0f0c29;
+  color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-  min-height: 100vh;
 }
-#app { min-height: 100vh; }
+#app { min-height: 100vh; color: #ffffff; }
 </style>
