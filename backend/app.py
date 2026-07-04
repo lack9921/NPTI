@@ -13,7 +13,6 @@ import os
 # ============================================================
 # ============================================================
 
-# PyInstaller 打包后 _MEIPASS 指向临时解压目录
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
 else:
@@ -31,7 +30,6 @@ if os.path.exists(STATIC_DIR):
     @app.route('/assets/<path:filename>')
     def assets(filename):
         return send_from_directory(os.path.join(STATIC_DIR, 'assets'), filename)
-    # Vue Router 历史模式：所有非 API 路径返回 index.html
     @app.errorhandler(404)
     def not_found(e):
         if not request.path.startswith('/api'):
@@ -57,7 +55,6 @@ def _get_session(sid):
 
 
 # ============================================================
-#  API 端点
 # ============================================================
 
 @app.route("/api/health")

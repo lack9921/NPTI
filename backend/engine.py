@@ -34,11 +34,9 @@ POOLS_PATH = os.path.join(ROOT, "pools.json")
 
 
 # ============================================================
-#  16 种人格类型描述（纯心理学中性描述，无贬义）
 # ============================================================
 
 # ============================================================
-#  16 种人格分析报告（约 300-400 字）
 # ============================================================
 ANALYSIS_REPORTS = None
 def _load_reports():
@@ -54,7 +52,6 @@ def _load_reports():
     return ANALYSIS_REPORTS
 
 PERSONALITY_MAP = {
-    # I 系（外放表达）
     "I_P_A_D": ("IPAD", "逻辑爆破者",
         "评论区的长文战神。看到逻辑漏洞会忍不住拆解，享受思辨本身带来的快感。不是为了赢，是为了「说清楚」。"),
     "I_P_A_F": ("IPAF", "精准评论者",
@@ -71,7 +68,6 @@ PERSONALITY_MAP = {
         "安静但有深度。他的表达不是辩论，是倾诉。写长篇感受不是为了说服谁，是为了记录自己被打动的瞬间。"),
     "I_S_C_F": ("ISCF", "接梗王",
         "不主动挑事，但谁挑事他都接得住。点赞收藏转发表情包，轻量互动让气氛热起来。"),
-    # R 系（内收克制）
     "R_P_A_D": ("RPAD", "冷静拆解者",
         "标准理性分析用户。不轻易发言，但一旦发言就准备充分。情绪化的言论无法带偏他——他只在乎逻辑。"),
     "R_P_A_F": ("RPAF", "轻量拆解者",
@@ -90,10 +86,10 @@ PERSONALITY_MAP = {
         "纯浏览型用户。互联网的隐形人。不点赞不评论不转发，唯一存在的证据就是DAU里的一个数字。"),
 }
 
-# Stage 1: L=I, R=R  （能量表达：外放/内收）
-# Stage 2: L=P, R=S  （参与方式：主动/观察）
-# Stage 3: L=A, R=C  （认知方式：分析/语境）
-# Stage 4: L=D, R=F  （表达方式：深度/碎片）
+# Stage 1: L=I, R=R
+# Stage 2: L=P, R=S
+# Stage 3: L=A, R=C
+# Stage 4: L=D, R=F
 DIM_LETTERS = [
     {"L": "I", "R": "R"},  # Stage 1
     {"L": "P", "R": "S"},  # Stage 2
@@ -212,12 +208,12 @@ class NPFJEngine:
         is_final = False
 
         if next_pool_str is None:
-            # Stage 0（基准校准）：固定路由到 Stage 1（pool 1）
+                        # Stage 0: route to pool 1
             next_pool = 1
         elif isinstance(next_pool_str, int):
             next_pool = next_pool_str
         elif next_pool_str in ("D", "F", "J", "W"):
-            # Stage 4：最终决出，没有下一题池
+                        # Stage 4: final, no next pool
             is_final = True
             next_pool = None
 

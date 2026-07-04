@@ -64,7 +64,6 @@ class WeightCalculator:
         max_v = self.max_per_question * self.total_questions
         w = [min(max_v, max(0, s)) for s in state]
 
-        # RGB 通道映射
         r = int(8 + w[3] * 0.7)
         g = int(6 + w[1] * 0.5)
         b = int(10 + w[4] * 0.6)

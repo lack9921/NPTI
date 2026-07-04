@@ -1,14 +1,6 @@
 /**
- * API 请求封装 —— NPFJ
  *
- * 流程：
- * 1. POST /api/session/create → 获取 session_id
- * 2. GET  /api/pool/<id>      → 获取题池题目
- * 3. POST /api/pool/<id>/submit → 提交 5 个答案（带上 session_id）
- * 4. POST /api/result          → 最终结算（带上 session_id）
  *
- * session_id 由 createSession 返回，后续每次请求都传给后端。
- * 不再依赖 cookie，避免跨域丢失会话的问题。
  */
 import axios from 'axios'
 

@@ -91,7 +91,7 @@ const currentStepIndex = ref(1)
 const loading = ref(true)
 const submitting = ref(false)
 const errorMsg = ref('')
-const dynamicBg = ref('')  // 从 API 返回的动态渐变背景
+const dynamicBg = ref('')
 
 const stageColors = [
   { a: '#4facfe', b: '#2563eb', glow: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.15) 0%, transparent 60%)', page: 'linear-gradient(135deg, #0a1628 0%, #0f1f3a 50%, #0a1628 100%)' },
