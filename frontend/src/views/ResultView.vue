@@ -15,6 +15,13 @@
         <RadarChart :radarData="result.radar_data" height="320px" />
       </div>
 
+      <n-divider style="margin: 24px auto; max-width: 160px;" />
+
+      <div class="report-section" v-if="result.report">
+        <h3 style="font-size: 15px; color: rgba(255,255,255,0.6); margin-bottom: 12px; font-weight: 500;">深度分析</h3>
+        <div class="report-text">{{ result.report }}</div>
+      </div>
+
       <div style="text-align: center; margin-top: 24px;">
         <n-button ghost round size="large" @click="goHome"
           :style="{ borderColor: colors.base + '55', color: colors.base }">
@@ -81,6 +88,11 @@ function goHome() { router.push('/') }
 .type-title { font-size: 24px; margin-bottom: 10px; }
 .type-desc { color: rgba(255,255,255,0.55); line-height: 1.7; font-size: 14px; }
 .radar-section { margin-top: 8px; }
+.report-section { text-align: left; }
+.report-text {
+  font-size: 14px; line-height: 1.9; color: rgba(255,255,255,0.7);
+  white-space: pre-line;
+}
 
 .loading-state {
   display: flex; align-items: center; justify-content: center; min-height: 100vh;
