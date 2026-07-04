@@ -68,7 +68,7 @@ function updateChart() {
       shape: 'polygon',
       splitNumber: 4,
       axisName: {
-        color: '
+        color: '#fff',
         fontSize: 14
       },
       splitLine: {
@@ -88,11 +88,11 @@ function updateChart() {
         color: 'rgba(102,126,234,0.3)'
       },
       lineStyle: {
-        color: '
+        color: '#fff',
         width: 2
       },
       itemStyle: {
-        color: '
+        color: '#fff',
       }
     }]
   })
