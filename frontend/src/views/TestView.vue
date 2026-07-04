@@ -1,60 +1,73 @@
 <!--
   TestView.vue —— NPFJ 动态路由答题页
-  每个题池固定 5 题，四选一，不暴露任何路由/权重信息给前端。
-  颜色随阶段渐变：蓝 → 青 → 紫 → 粉
+  使用 Naive UI 组件
 -->
 <template>
-  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2, '--accent-glow': accentGlow }">
-    <!-- 动态渐变背景层 -->
+  <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2 }">
     <div class="bg-layer" :style="{ background: bgGradient }"></div>
 
-    <!-- 顶部：阶段指示 -->
+    <!-- 阶段信息 -->
     <div class="stage-header">
-      <div class="stage-badge" v-if="poolInfo">阶段 {{ poolInfo.stage }} / 4</div>
-      <div class="pool-name" v-if="poolInfo">{{ poolInfo.name }}</div>
-      <div class="pool-desc" v-if="poolInfo">{{ poolInfo.description }}</div>
-      <div class="path-dots">
-        <span v-for="(step, i) in pathSteps" :key="i" class="pdot"
-          :class="{ filled: step.done, current: step.active }"
-          :style="step.done ? { background: accentColor } : {}"
-        ></span>
-      </div>
+      <n-tag :bordered="false" size="small" :style="{ background: accentColor + '18', color: accentColor, border: 'none', fontWeight: 600, letterSpacing: '1px' }">
+        阶段 {{ poolInfo?.stage }} / 4
+      </n-tag>
+      <div class="pool-name">{{ poolInfo?.name }}</div>
+      <div class="pool-desc">{{ poolInfo?.description }}</div>
+      <div class="q-ref" v-if="currentQuestion.id">#{{ currentQuestion.id }} · Pool {{ poolId }}</div>
+
+      <!-- 步骤条 -->
+      <n-steps :current="currentStepIndex" :status="'process'" size="small" class="steps-bar">
+        <n-step title="能量" />
+        <n-step title="参与" />
+        <n-step title="认知" />
+        <n-step title="表达" />
+      </n-steps>
     </div>
 
+    <!-- 加载 -->
     <div v-if="loading" class="loading-state">
-      <div class="spinner" :style="{ borderTopColor: accentColor }"></div>
+      <n-spin size="medium" />
       <p>加载中...</p>
     </div>
 
+    <!-- 题目 -->
     <template v-if="!loading && currentQuestions.length > 0">
       <div class="q-area">
+        <div class="q-progress-text">{{ answeredCount }} / 5</div>
+        <n-progress type="line" :percentage="answeredCount * 20" :border-radius="3" :height="5"
+          :color="accentColor" :rail-color="'rgba(255,255,255,0.06)'" :indicator-placement="'inside'"
+          class="q-progress" />
+
         <h2 class="q-text">{{ currentQuestion.text }}</h2>
-        <div class="q-ref">#{{ currentQuestion.id }} · Pool {{ poolId }}</div>
+
         <div class="options">
           <div v-for="opt in currentQuestion.options" :key="opt.key"
-            class="option"
+            class="option-card"
             :class="{ selected: selectedAnswer === opt.key }"
-            :style="selectedAnswer === opt.key ? { borderColor: accentColor, background: accentColor + '22' } : {}"
+            :style="selectedAnswer === opt.key ? { borderColor: accentColor, background: accentColor + '14' } : {}"
             @click="selectOption(opt.key)"
           >
-            <span class="opt-key" :style="selectedAnswer === opt.key ? { background: accentColor } : {}">{{ opt.key }}</span>
-            <span class="opt-text">{{ opt.text }}</span>
+            <div class="opt-key" :style="selectedAnswer === opt.key ? { background: accentColor, color: '#fff' } : {}">
+              {{ opt.key }}
+            </div>
+            <div class="opt-text">{{ opt.text }}</div>
+            <div v-if="selectedAnswer === opt.key" class="opt-check" :style="{ color: accentColor }">✓</div>
           </div>
         </div>
       </div>
 
-      <button class="next-btn" :disabled="!selectedAnswer"
-        :style="selectedAnswer ? { background: `linear-gradient(135deg, ${accentColor}, ${accentColor2})` } : {}"
-        @click="nextQuestion">
+      <n-button type="primary" size="large" :disabled="!selectedAnswer"
+        :style="selectedAnswer ? { background: `linear-gradient(135deg, ${accentColor}, ${accentColor2})`, borderColor: 'transparent' } : {}"
+        block round @click="nextQuestion">
         {{ isLastQuestion ? '提交本组' : '下一题' }}
-      </button>
+      </n-button>
     </template>
 
+    <!-- 提交遮罩 -->
     <div v-if="submitting" class="loading-overlay">
-      <div class="spinner" :style="{ borderTopColor: accentColor }"></div>
-      <p>分析中...</p>
+      <n-spin size="large" />
+      <p style="margin-top: 16px; color: rgba(255,255,255,0.6);">分析中...</p>
     </div>
-    <div v-if="errorMsg" class="error-toast">{{ errorMsg }}</div>
   </div>
 </template>
 
@@ -71,27 +84,25 @@ const currentQuestions = ref([])
 const currentQIndex = ref(0)
 const answers = ref([])
 const selectedAnswer = ref(null)
-const pathSteps = ref([])
+const currentStepIndex = ref(0)
 const loading = ref(true)
 const submitting = ref(false)
 const errorMsg = ref('')
 
-// 各阶段配色方案
 const stageColors = [
-  { accent: '#4facfe', accent2: '#667eea', glow: 'rgba(79,172,254,0.15)', bg: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.08) 0%, transparent 60%)' },
-  { accent: '#00d2ff', accent2: '#3a7bd5', glow: 'rgba(0,210,255,0.15)', bg: 'radial-gradient(ellipse at 50% 30%, rgba(0,210,255,0.06) 0%, transparent 60%)' },
-  { accent: '#a855f7', accent2: '#7c3aed', glow: 'rgba(168,85,247,0.15)', bg: 'radial-gradient(ellipse at 40% 20%, rgba(168,85,247,0.06) 0%, transparent 60%)' },
-  { accent: '#f472b6', accent2: '#ec4899', glow: 'rgba(244,114,182,0.15)', bg: 'radial-gradient(ellipse at 60% 30%, rgba(244,114,182,0.06) 0%, transparent 60%)' },
+  { a: '#4facfe', b: '#2563eb', bg: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.06) 0%, transparent 60%)' },
+  { a: '#2dd4bf', b: '#0d9488', bg: 'radial-gradient(ellipse at 50% 20%, rgba(45,212,191,0.05) 0%, transparent 60%)' },
+  { a: '#a78bfa', b: '#7c3aed', bg: 'radial-gradient(ellipse at 40% 20%, rgba(167,139,250,0.05) 0%, transparent 60%)' },
+  { a: '#f472b6', b: '#ec4899', bg: 'radial-gradient(ellipse at 60% 20%, rgba(244,114,182,0.05) 0%, transparent 60%)' },
 ]
 
-const currentStage = computed(() => Math.max(0, (poolInfo.value?.stage || 1) - 1))
-const accentColor = computed(() => stageColors[currentStage.value]?.accent || '#4facfe')
-const accentColor2 = computed(() => stageColors[currentStage.value]?.accent2 || '#667eea')
-const accentGlow = computed(() => stageColors[currentStage.value]?.glow || 'rgba(79,172,254,0.15)')
-const bgGradient = computed(() => stageColors[currentStage.value]?.bg || '')
+const stageIndex = computed(() => Math.max(0, (poolInfo.value?.stage || 1) - 1))
+const accentColor = computed(() => stageColors[stageIndex.value]?.a || '#4facfe')
+const accentColor2 = computed(() => stageColors[stageIndex.value]?.b || '#2563eb')
+const bgGradient = computed(() => stageColors[stageIndex.value]?.bg || '')
 
 const currentQuestion = computed(() => currentQuestions.value[currentQIndex.value] || {})
-const answeredCount = computed(() => answers.value.filter(a => a !== undefined).length)
+const answeredCount = computed(() => answers.value.filter(a => a != null).length)
 const isLastQuestion = computed(() => currentQIndex.value === currentQuestions.value.length - 1)
 
 onMounted(async () => {
@@ -113,21 +124,12 @@ async function loadPool(id) {
     currentQIndex.value = 0
     answers.value = []
     selectedAnswer.value = null
-    updatePathDots(d.stage)
+    currentStepIndex.value = Math.max(0, d.stage - 1)
   } catch { errorMsg.value = '⚠️ 加载失败' }
   loading.value = false
 }
 
-function updatePathDots(stage) {
-  const dots = []
-  const labels = ['能量', '参与', '认知', '表达']
-  for (let i = 0; i < 4; i++) {
-    dots.push({ done: i < stage, active: i === stage })
-  }
-  pathSteps.value = dots
-}
-
-function selectOption(key) { selectedAnswer.value = key }
+function selectOption(k) { selectedAnswer.value = k }
 
 function nextQuestion() {
   if (!selectedAnswer.value) return
@@ -157,82 +159,53 @@ async function submitCurrentPool() {
 
 <style scoped>
 .test-page {
-  max-width: 560px; margin: 0 auto; padding: 30px 20px;
-  min-height: 100vh; display: flex; flex-direction: column;
-  position: relative; transition: --accent 0.6s ease;
+  max-width: 520px; margin: 0 auto; padding: 30px 20px;
+  min-height: 100vh; display: flex; flex-direction: column; position: relative;
 }
 .bg-layer {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; transition: all 0.8s ease; z-index: 0;
+  pointer-events: none; transition: all 0.6s ease; z-index: 0;
 }
 
-.stage-header {
-  text-align: center; margin-bottom: 24px; position: relative; z-index: 1;
-}
-.stage-badge {
-  display: inline-block; background: var(--accent-glow, rgba(79,172,254,0.12));
-  border: 1px solid color-mix(in srgb, var(--accent, #4facfe) 30%, transparent);
-  padding: 4px 14px; border-radius: 12px; font-size: 12px; letter-spacing: 2px; margin-bottom: 10px;
-  color: var(--accent, #4facfe);
-}
-.pool-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.pool-desc { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
+.stage-header { text-align: center; margin-bottom: 20px; position: relative; z-index: 1; }
+.pool-name { font-size: 20px; font-weight: 700; margin-top: 10px; margin-bottom: 2px; }
+.pool-desc { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+.q-ref { font-size: 11px; color: rgba(255,255,255,0.18); font-family: monospace; margin-bottom: 12px; letter-spacing: 1px; }
+.steps-bar { max-width: 320px; margin: 0 auto; }
 
-/* 路径点指示器 */
-.path-dots { display: flex; justify-content: center; gap: 10px; }
-.pdot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: rgba(255,255,255,0.12); transition: all 0.4s ease;
+.loading-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 300px; gap: 16px; position: relative; z-index: 1;
+  color: rgba(255,255,255,0.4);
 }
-.pdot.current { box-shadow: 0 0 10px var(--accent-glow, rgba(79,172,254,0.3)); transform: scale(1.3); }
-.pdot.filled { background: var(--accent, #4facfe); }
 
-/* 题目区 */
 .q-area { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; }
+.q-progress-text { text-align: right; font-size: 12px; color: rgba(255,255,255,0.25); margin-bottom: 4px; }
+.q-progress { margin-bottom: 20px; }
 .q-text {
-  font-size: 20px; line-height: 1.6; margin-bottom: 4px; text-align: center; font-weight: 500;
+  font-size: 19px; line-height: 1.6; margin-bottom: 22px;
+  text-align: center; font-weight: 500;
 }
-.q-ref {
-  text-align: center; font-size: 11px; color: rgba(255,255,255,0.2);
-  font-family: monospace; margin-bottom: 24px; letter-spacing: 1px;
+
+.options { display: flex; flex-direction: column; gap: 8px; }
+.option-card {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+  background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 12px; cursor: pointer; transition: all 0.15s; position: relative;
 }
-.options { display: flex; flex-direction: column; gap: 10px; }
-.option {
-  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-  background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08);
-  border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
-}
-.option:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
-.option.selected { background: var(--accent-glow, rgba(79,172,254,0.08)); }
+.option-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.15); }
+.option-card.selected { border-color: var(--accent); }
 .opt-key {
-  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.08); border-radius: 50%; font-weight: 700; font-size: 13px;
-  flex-shrink: 0; transition: background 0.2s;
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06); border-radius: 50%; font-weight: 700; font-size: 12px;
+  flex-shrink: 0; transition: all 0.15s;
 }
-.opt-text { font-size: 15px; line-height: 1.4; }
+.opt-text { font-size: 14px; line-height: 1.4; flex: 1; }
+.opt-check { font-size: 16px; font-weight: bold; position: absolute; right: 14px; }
 
-/* 按钮 */
-.next-btn {
-  width: 100%; padding: 14px; border: none; border-radius: 12px;
-  font-size: 16px; color: #fff; cursor: pointer; transition: all 0.2s;
-  position: relative; z-index: 1; margin-top: 20px;
-  background: rgba(255,255,255,0.08);
-}
-.next-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.next-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow, rgba(79,172,254,0.2)); }
-
-/* 加载动画 */
 .loading-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(15,12,41,0.9); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 16px; z-index: 100;
-}
-.loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 12px; color: rgba(255,255,255,0.5); position: relative; z-index: 1; }
-.spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.08); border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.error-toast {
-  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  background: rgba(255, 107, 107, 0.9); color: #fff; padding: 10px 20px;
-  border-radius: 8px; font-size: 13px; z-index: 200;
+  align-items: center; justify-content: center; z-index: 100;
 }
 </style>

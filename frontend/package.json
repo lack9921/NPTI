@@ -1,5 +1,5 @@
 {
-  "name": "npti-frontend",
+  "name": "npfj-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,7 +12,8 @@
     "vue": "^3.4.0",
     "vue-router": "^4.2.0",
     "axios": "^1.6.0",
-    "echarts": "^5.4.0"
+    "echarts": "^5.4.0",
+    "naive-ui": "^2.38.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
