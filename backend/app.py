@@ -24,6 +24,7 @@ _PROJ_DIR = os.path.dirname(_BACKEND_DIR)
 _DIST_DIR = os.path.join(_PROJ_DIR, "frontend", "dist")
 if not os.path.isdir(_DIST_DIR):
     _DIST_DIR = os.path.join(_BACKEND_DIR, "static")
+_DIST_EXISTS = os.path.isdir(_DIST_DIR)
 
 app = Flask(__name__)
 CORS(app)
@@ -171,6 +172,8 @@ def get_result():
 @app.route("/")
 def serve_index():
     """首页：serve frontend/dist/index.html"""
+    if not _DIST_EXISTS:
+        return '<h1>⚠️ 前端资源未找到</h1><p>请先构建前端：<br><code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code></p><p>或者下载 release 分支的完整包。</p>', 200, {'Content-Type': 'text/html; charset=utf-8'}
     return send_from_directory(_DIST_DIR, "index.html")
 
 
@@ -181,6 +184,8 @@ def serve_spa(path):
       1. 如果是 dist 中的静态文件（JS/CSS 等），直接返回
       2. 其余所有非 /api/ 路径 → index.html（SPA fallback）
     """
+    if not _DIST_EXISTS:
+        return serve_index()
     filepath = os.path.join(_DIST_DIR, path)
     if os.path.exists(filepath) and os.path.isfile(filepath):
         return send_from_directory(_DIST_DIR, path)
@@ -192,13 +197,12 @@ def serve_spa(path):
 # ============================================================
 
 if __name__ == "__main__":
-    dist_exists = os.path.isdir(_DIST_DIR)
     print("🚀 NPFJ 服务启动成功！")
     print(f"  题库加载: {len(engine.pools)} 个题池")
-    if dist_exists:
+    if _DIST_EXISTS:
         print(f"  前端资源: {_DIST_DIR} (已加载)")
         print(f"  打开浏览器 → http://localhost:8080")
     else:
-        print("  ⚠️ 没有检测到前端 dist 目录，仅 API 模式可用")
+        print("  ⚠️ 前端资源未找到，仅 API 模式可用")
         print(f"  请执行: cd frontend && npm install && npm run build")
     app.run(host="0.0.0.0", port=8080, debug=True)
