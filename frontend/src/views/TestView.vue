@@ -2,7 +2,7 @@
   TestView.vue —— NPFJ 动态路由答题页
 
   新的答题流程：
-  1. 进入页面 → 创建会话 → 加载第一个题池（基准校准，5 题）
+  1. 进入页面 → 创建会话 → 加载 Stage 1 题池（5 题）
   2. 用户作答 5 题 → 点击提交 → 后端路由到下一题池
   3. 加载下一个题池 → 继续作答
   4. 重复直到 is_final = true → 跳转结果页
@@ -88,7 +88,7 @@ const router = useRouter()
 
 // ======== 状态 ========
 const sessionId = ref(null)
-const poolId = ref(0)
+const poolId = ref(1)
 const poolInfo = ref(null)
 const currentQuestions = ref([])
 const currentQIndex = ref(0)
@@ -151,9 +151,9 @@ async function loadPool(id) {
 
 /** 更新路径指示器 */
 function updatePathSteps(stage) {
-  const total = 5  // 基准校准 + 4 个维度
+  const total = 4  // 4 个维度，各 1 个题池
   const steps = []
-  const stageNames = ['基准', '连接', '探针', '路由', '输出']
+  const stageNames = ['能量', '参与', '认知', '表达']
   for (let i = 0; i < total; i++) {
     const letter = pathSteps.value[i]?.letter
     steps.push({
