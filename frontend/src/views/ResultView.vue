@@ -1,6 +1,6 @@
 <!-- 结果页 —— 人格 + 五维雷达图 -->
 <template>
-  <div class="result-page" v-if="result" :style="{ '--accent': colors.base, '--accent2': colors.dark }">
+  <div class="result-page" v-if="result" :style="{ '--accent': colors.base, '--accent2': colors.dark, background: result.gradient || colors.bg }">
     <div class="bg-glow" :style="{ background: `radial-gradient(ellipse at 50% 15%, ${colors.glow} 0%, transparent 60%)` }"></div>
 
     <div class="result-card">
@@ -62,7 +62,7 @@ const typeColors = {
   RSCF: { base: '#cbd5e1', dark: '#94a3b8', glow: 'rgba(203,213,225,0.1)' },
 }
 
-const colors = computed(() => typeColors[result.value?.type] || { base: '#667eea', dark: '#764ba2', glow: 'rgba(102,126,234,0.1)' })
+const colors = computed(() => typeColors[result.value?.type] || { base: .#667eea., dark: .#764ba2., glow: .rgba(102,126,234,0.1)., bg: .linear-gradient(135deg, #0f0c29, #302b63). })
 
 function goHome() { router.push('/') }
 </script>

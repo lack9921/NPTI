@@ -89,6 +89,7 @@ const currentStepIndex = ref(0)
 const loading = ref(true)
 const submitting = ref(false)
 const errorMsg = ref('')
+const dynamicBg = ref('')  // 从 API 返回的动态渐变背景
 
 const stageColors = [
   { a: '#4facfe', b: '#2563eb', glow: 'radial-gradient(ellipse at 30% 20%, rgba(79,172,254,0.15) 0%, transparent 60%)', page: 'linear-gradient(135deg, #0a1628 0%, #0f1f3a 50%, #0a1628 100%)' },
@@ -100,7 +101,11 @@ const stageColors = [
 const stageIndex = computed(() => Math.max(0, (poolInfo.value?.stage || 1) - 1))
 const accentColor = computed(() => stageColors[stageIndex.value]?.a || '#4facfe')
 const accentColor2 = computed(() => stageColors[stageIndex.value]?.b || '#2563eb')
-const pageBg = computed(() => stageColors[stageIndex.value]?.page || 'linear-gradient(135deg, #0f0c29, #302b63)')
+const pageBg = computed(() => {
+  // 优先使用 API 返回的动态渐变（含权重计算的颜色）
+  if (dynamicBg.value) return dynamicBg.value
+  return stageColors[stageIndex.value]?.page || 'linear-gradient(135deg, #0f0c29, #302b63)'
+})
 const bgGlow = computed(() => stageColors[stageIndex.value]?.glow || '')
 
 const currentQuestion = computed(() => currentQuestions.value[currentQIndex.value] || {})
@@ -148,6 +153,8 @@ async function submitCurrentPool() {
   submitting.value = true
   try {
     const r = await submitPool(poolId.value, answers.value)
+    // 更新背景颜色（由 calculator.py 计算，随权重变化）
+    if (r.data.gradient) dynamicBg.value = r.data.gradient
     if (r.data.is_final) {
       const rr = await getResult()
       router.push({ name: 'Result', query: { data: JSON.stringify(rr.data) } })

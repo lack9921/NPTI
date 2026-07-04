@@ -1,41 +1,27 @@
 """
 NPFJ 后端 API — Flask 实现
 
-启动方式：
-    cd backend
-    pip install flask flask-cors
-    python app.py
-
-API 端点：
-    GET     /api/pool/<pool_id>       → 获取题池题目
-    POST    /api/session/create       → 创建新会话
-    POST    /api/pool/<pool_id>/submit → 提交一组答案
-    POST    /api/result                → 最终结算
-
-前端 Vite 代理：/api → localhost:8080
+权重计算由独立的 calculator.py 处理，与路由引擎解耦。
 """
 
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from engine import NPFJEngine
+from calculator import WeightCalculator
 import uuid
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-
-# 用密钥签名 session cookie
 app.secret_key = "npfj-secret-key-2026"
 
-# 全局引擎实例
 engine = NPFJEngine()
+calc = WeightCalculator()
 
-# 内存会话存储（生产环境应该用 Redis/数据库）
-# key = session_id, value = session data
+# 内存会话存储
 _sessions = {}
 
 
 def _get_or_create_session():
-    """获取当前会话 ID，没有则创建"""
     sid = session.get("session_id")
     if not sid or sid not in _sessions:
         sid = str(uuid.uuid4())[:8]
@@ -50,12 +36,10 @@ def _get_or_create_session():
 
 @app.route("/api/health")
 def health():
-    """健康检查"""
     meta = engine.get_meta()
-    pool_count = len(engine.pools)
     return jsonify({
         "status": "ok",
-        "total_pools": pool_count,
+        "total_pools": len(engine.pools),
         "dimensions": meta.get("dimensions", []),
         "weight_dims": meta.get("weight_dims", []),
     })
@@ -63,27 +47,10 @@ def health():
 
 @app.route("/api/pool/<int:pool_id>")
 def get_pool(pool_id):
-    """
-    获取指定题池的题目（前端可见信息，不含权重和路由标签）
-
-    返回：
-    {
-        "id": 0,
-        "stage": 0,
-        "name": "基准校准",
-        "description": "...",
-        "questions": [
-            { "id": 1, "text": "...", "options": [
-                { "key": "A", "text": "..." },
-                { "key": "B", "text": "..." }
-            ]}
-        ]
-    }
-    """
+    """获取指定题池的题目"""
     questions = engine.get_pool_questions(pool_id)
     if questions is None:
         return jsonify({"error": "题池不存在"}), 404
-
     info = engine.get_pool_info(pool_id)
     return jsonify({
         "id": pool_id,
@@ -96,16 +63,7 @@ def get_pool(pool_id):
 
 @app.route("/api/session/create", methods=["POST"])
 def create_session():
-    """
-    创建新测试会话
-
-    返回：
-    {
-        "session_id": "abc12345",
-        "first_pool": 1,
-        "pool_info": { ... }
-    }
-    """
+    """创建新测试会话"""
     sid, sess = _get_or_create_session()
     pool_info = engine.get_pool_info(1)
     return jsonify({
@@ -118,28 +76,8 @@ def create_session():
 @app.route("/api/pool/<int:pool_id>/submit", methods=["POST"])
 def submit_pool(pool_id):
     """
-    提交当前题池的答案，触发路由
-
-    请求体：
-    { "answers": ["A", "B", "A", "A", "B"] }
-
-    返回（未完成）：
-    {
-        "next_pool": 2,
-        "stage": 1,
-        "is_final": false,
-        "route_result": "L",
-        "next_pool_info": { ... }
-    }
-
-    返回（已完成）：
-    {
-        "next_pool": null,
-        "stage": 4,
-        "is_final": true,
-        "route_result": "L",
-        "result_ready": true
-    }
+    提交一组答案。
+    路由由 engine.py 处理，权重由 calculator.py 处理。
     """
     sid, sess = _get_or_create_session()
     data = request.get_json()
@@ -151,15 +89,28 @@ def submit_pool(pool_id):
     if len(answers) != 5:
         return jsonify({"error": f"需要 5 个答案，收到 {len(answers)} 个"}), 400
 
+    # 交给引擎做路由判定
     result = engine.submit_pool_answers(sess, pool_id, answers)
     if result is None:
-        return jsonify({"error": "提交失败，题池 ID 或答案格式不正确"}), 400
+        return jsonify({"error": "提交失败"}), 400
+
+    # 提交完成后，用 calculator 处理所有选项的权重
+    # （engine.py 不碰权重，权重全部由 calculator.py 管理）
+    questions = engine.pools.get(str(pool_id), {}).get("questions", [])
+    for i, ans in enumerate(answers):
+        if i < len(questions):
+            opt = questions[i]["options"].get(ans.upper(), questions[i]["options"].get("A"))
+            w = opt.get("weights", [0, 0, 0, 0, 0])
+            calc.accumulate(sess["weights"], w)
 
     response = {
         "next_pool": result["next_pool"],
         "stage": result["stage"],
         "is_final": result["is_final"],
         "route_result": result["route_result"],
+        # 每次提交后返回当前权重计算的颜色
+        "color": calc.compute_color(sess["weights"]),
+        "gradient": calc.compute_color_gradient(sess["weights"], result["stage"]),
     }
 
     if result["is_final"]:
@@ -174,26 +125,23 @@ def submit_pool(pool_id):
 @app.route("/api/result", methods=["POST"])
 def get_result():
     """
-    最终结算，生成人格类型和五维雷达图数据
-
-    返回：
-    {
-        "type": "NPFJ",
-        "title": "全栈掌控者",
-        "description": "...",
-        "path_letters": [ ... ],
-        "dimensions": [ ... ],
-        "radar_data": [ ... ],
-    }
+    最终结算。
+    人格信息由 engine.py 生成，雷达图和颜色由 calculator.py 生成。
     """
     sid, sess = _get_or_create_session()
-
     if not sess["done"]:
         return jsonify({"error": "测试尚未完成"}), 400
 
     result = engine.finalize_result(sess)
     if result is None:
         return jsonify({"error": "结果生成失败"}), 500
+
+    # 用 calculator 补充权重计算结果
+    weight_result = calc.compute_all(sess["weights"], stage=3)
+
+    result["radar_data"] = weight_result["radar"]
+    result["color"] = weight_result["color"]
+    result["gradient"] = weight_result["gradient"]
 
     return jsonify(result)
 
@@ -205,4 +153,5 @@ def get_result():
 if __name__ == "__main__":
     print("🚀 NPFJ 后端启动成功！")
     print(f"  题库加载: {len(engine.pools)} 个题池")
+    print(f"  权重引擎: calculator.py（独立于路由）")
     app.run(host="0.0.0.0", port=8080, debug=True)

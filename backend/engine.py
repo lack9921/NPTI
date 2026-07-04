@@ -178,17 +178,13 @@ class NPFJEngine:
         if len(answers) != len(questions):
             return None
 
-        # 统计路由方向 + 累加权重
+        # 统计路由方向（引擎只负责路由，权重由 calculator.py 处理）
         route_counts = {"L": 0, "R": 0}
         for i, ans in enumerate(answers):
             q_data = questions[i]
             opt = q_data["options"].get(ans.upper(), q_data["options"].get("A"))
             label = opt["route"]
             route_counts[label] = route_counts.get(label, 0) + 1
-            # 累加五维权重
-            w = opt.get("weights", [0, 0, 0, 0, 0])
-            for j in range(5):
-                session["weights"][j] += w[j]
 
         # 路由：多数决
         route_result = "L" if route_counts.get("L", 0) >= route_counts.get("R", 0) else "R"
@@ -286,27 +282,12 @@ class NPFJEngine:
                 "opposite": opp_letter,
             })
 
-        # 五维雷达图数据（归一化到 0-100）
-        weight_dims = self.get_meta().get("weight_dims", ["W1", "W2", "W3", "W4", "W5"])
-        weights = session["weights"]
-
-        # 归一化：假设最大可能每题 2 分 × 20 题 = 40 分，归一化到 0-100
-        max_possible = 40  # 20 题 × 2 分每题（一个维度的最大累积）
-        radar_data = []
-        for i in range(min(5, len(weights))):
-            normalized = min(100, int(weights[i] / max_possible * 100)) if max_possible > 0 else 50
-            dim_label = weight_dims[i] if i < len(weight_dims) else f"W{i+1}"
-            radar_data.append({
-                "name": dim_label,
-                "value": normalized,
-            })
-
-        # 路径字母表示（给前端展示）
+        # 路径字母表示
+        stage_names = ["能量表达", "参与方式", "认知方式", "表达方式"]
         path_letters = []
-        stage_names = ["基准校准", "连接拓扑", "探针模式", "路由逻辑", "输出格式"]
         for i, direction in enumerate(path):
             letter = DIM_LETTERS[i].get(direction, "?") if i < len(DIM_LETTERS) else "?"
-            stage_name = stage_names[i + 1] if i + 1 < len(stage_names) else f"阶段{i+1}"
+            stage_name = stage_names[i] if i < len(stage_names) else f"阶段{i+1}"
             path_letters.append({
                 "stage": stage_name,
                 "direction": direction,
@@ -320,5 +301,4 @@ class NPFJEngine:
             "path": path,
             "path_letters": path_letters,
             "dimensions": dimensions,
-            "radar_data": radar_data,
         }
