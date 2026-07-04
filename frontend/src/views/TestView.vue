@@ -14,6 +14,7 @@
     <!-- 顶部：路径进度和阶段信息 -->
     <div class="stage-header">
       <div class="stage-badge" v-if="poolInfo">阶段 {{ poolInfo.stage }} / 4</div>
+      <div class="pool-id" v-if="poolId">【题池 #{{ poolId }}】</div>
       <div class="pool-name" v-if="poolInfo">{{ poolInfo.name }}</div>
       <div class="pool-desc" v-if="poolInfo">{{ poolInfo.description }}</div>
       <!-- 路径指示器 -->
@@ -46,6 +47,7 @@
       <!-- 当前题目 -->
       <div class="question-card">
         <h2 class="q-text">{{ currentQuestion.text }}</h2>
+      <div class="q-id-label" v-if="currentQuestion.id">题号 #{{ currentQuestion.id }} / Pool {{ poolId }}</div>
         <div class="options">
           <div
             v-for="opt in currentQuestion.options"
@@ -243,6 +245,17 @@ async function submitCurrentPool() {
   font-weight: bold;
   margin-bottom: 6px;
 }
+.pool-id {
+  font-size: 13px;
+  color: #4facfe;
+  background: rgba(79,172,254,0.1);
+  border: 1px solid rgba(79,172,254,0.3);
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-family: monospace;
+}
 .pool-desc {
   font-size: 14px;
   color: rgba(255,255,255,0.6);
@@ -308,8 +321,15 @@ async function submitCurrentPool() {
 .q-text {
   font-size: 22px;
   line-height: 1.5;
-  margin-bottom: 30px;
+  margin-bottom: 8px;
   text-align: center;
+}
+.q-id-label {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  font-family: monospace;
+  margin-bottom: 24px;
 }
 
 .options {
