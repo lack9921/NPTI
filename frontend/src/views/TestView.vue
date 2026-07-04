@@ -29,6 +29,7 @@
     <template v-if="!loading && currentQuestions.length > 0">
       <div class="q-area">
         <h2 class="q-text">{{ currentQuestion.text }}</h2>
+        <div class="q-ref">#{{ currentQuestion.id }} · Pool {{ poolId }}</div>
         <div class="options">
           <div v-for="opt in currentQuestion.options" :key="opt.key"
             class="option"
@@ -189,7 +190,11 @@ async function submitCurrentPool() {
 /* 题目区 */
 .q-area { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; }
 .q-text {
-  font-size: 20px; line-height: 1.6; margin-bottom: 24px; text-align: center; font-weight: 500;
+  font-size: 20px; line-height: 1.6; margin-bottom: 4px; text-align: center; font-weight: 500;
+}
+.q-ref {
+  text-align: center; font-size: 11px; color: rgba(255,255,255,0.2);
+  font-family: monospace; margin-bottom: 24px; letter-spacing: 1px;
 }
 .options { display: flex; flex-direction: column; gap: 10px; }
 .option {
