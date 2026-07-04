@@ -15,7 +15,6 @@
   ]
 -->
 <template>
-  <!-- 图表的容器 div，用 ref 引用 -->
   <div ref="chartRef" :style="{ width, height }"></div>
 </template>
 
@@ -31,7 +30,6 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
 
-// 定义组件的 props（外部传入的参数）
 const props = defineProps({
   radarData: {        // 雷达图数据，格式见上方说明
     type: Array,
@@ -61,16 +59,13 @@ function initChart() {
 function updateChart() {
   if (!chartInstance || props.radarData.length === 0) return
 
-  // 构造雷达图的指标（每个维度一个指标，满分 100）
   const indicators = props.radarData.map(item => ({
     name: item.name,  // 维度名称，如 "I/E"
     max: 100          // 最大值 100
   }))
 
-  // 提取每个维度的具体数值
   const values = props.radarData.map(item => item.value)
 
-  // 配置 ECharts 选项
   chartInstance.setOption({
     backgroundColor: 'transparent',  // 透明背景
     radar: {
@@ -78,7 +73,7 @@ function updateChart() {
       shape: 'polygon',              // 多边形形状
       splitNumber: 4,                // 分成 4 圈
       axisName: {
-        color: '#fff',               // 轴标签颜色
+        color: '
         fontSize: 14
       },
       splitLine: {
@@ -98,23 +93,20 @@ function updateChart() {
         color: 'rgba(102,126,234,0.3)'   // 填充区域颜色
       },
       lineStyle: {
-        color: '#667eea',            // 线条颜色
+        color: '
         width: 2
       },
       itemStyle: {
-        color: '#764ba2'             // 数据点颜色
+        color: '
       }
     }]
   })
 }
 
-// 组件挂载到页面后，初始化图表
 onMounted(initChart)
 
-// 组件销毁时，释放 ECharts 实例避免内存泄漏
 onUnmounted(() => { chartInstance?.dispose() })
 
-// 监听 radarData 的变化，数据变了就重新渲染图表
 watch(() => props.radarData, () => {
   updateChart()
 }, { deep: true })  // deep: true 表示深度监听（检测数组内部的变化）

@@ -1,4 +1,3 @@
-<!-- 结果页 —— 人格 + 五维雷达图 -->
 <template>
   <div class="result-page" v-if="result" :style="{ '--accent': colors.base, '--accent2': colors.dark, background: result.gradient || colors.bg }">
     <div class="bg-glow" :style="{ background: `radial-gradient(ellipse at 50% 15%, ${colors.glow} 0%, transparent 60%)` }"></div>

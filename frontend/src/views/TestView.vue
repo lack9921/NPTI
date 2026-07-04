@@ -4,12 +4,9 @@
 -->
 <template>
   <div class="test-page" :style="{ '--accent': accentColor, '--accent2': accentColor2 }">
-    <!-- 全屏动态背景 -->
     <div class="bg-layer" :style="{ background: pageBg }"></div>
-    <!-- 光晕 -->
     <div class="glow-layer" :style="{ background: bgGlow }"></div>
 
-    <!-- 阶段信息 -->
     <div class="stage-header">
       <n-tag :bordered="false" size="small" :style="{ background: accentColor + '18', color: accentColor, border: 'none', fontWeight: 600, letterSpacing: '1px' }">
         阶段 {{ poolInfo?.stage }} / 4
@@ -18,7 +15,6 @@
       <div class="pool-desc">{{ poolInfo?.description }}</div>
       <div class="q-ref" v-if="currentQuestion.id">#{{ currentQuestion.id }} · Pool {{ poolId }}</div>
 
-      <!-- 步骤条 -->
       <n-steps :current="currentStepIndex" :status="'process'" size="small" class="steps-bar">
         <n-step title="能量" />
         <n-step title="参与" />
@@ -27,13 +23,11 @@
       </n-steps>
     </div>
 
-    <!-- 加载 -->
     <div v-if="loading" class="loading-state">
       <n-spin size="medium" />
       <p>加载中...</p>
     </div>
 
-    <!-- 题目 -->
     <template v-if="!loading && currentQuestions.length > 0">
       <div class="q-area">
         <div class="q-progress-text">{{ answeredCount }} / 5</div>
@@ -73,7 +67,6 @@
       </div>
     </template>
 
-    <!-- 提交遮罩 -->
     <div v-if="submitting" class="loading-overlay">
       <n-spin size="large" />
       <p style="margin-top: 16px; color: rgba(255,255,255,0.6);">分析中...</p>
@@ -111,7 +104,6 @@ const stageIndex = computed(() => Math.max(0, (poolInfo.value?.stage || 1) - 1))
 const accentColor = computed(() => stageColors[stageIndex.value]?.a || '#4facfe')
 const accentColor2 = computed(() => stageColors[stageIndex.value]?.b || '#2563eb')
 const pageBg = computed(() => {
-  // 优先使用 API 返回的动态渐变（含权重计算的颜色）
   if (dynamicBg.value) return dynamicBg.value
   return stageColors[stageIndex.value]?.page || 'linear-gradient(135deg, #0f0c29, #302b63)'
 })
@@ -160,10 +152,8 @@ function nextQuestion() {
 
 function prevQuestion() {
   if (currentQIndex.value <= 0) return
-  // 保存当前答案再回退
   answers.value[currentQIndex.value] = selectedAnswer.value
   currentQIndex.value--
-  // 恢复上一题的选中状态
   selectedAnswer.value = answers.value[currentQIndex.value] || null
 }
 
@@ -171,7 +161,6 @@ async function submitCurrentPool() {
   submitting.value = true
   try {
     const r = await submitPool(poolId.value, answers.value)
-    // 更新背景颜色（由 calculator.py 计算，随权重变化）
     if (r.data.gradient) dynamicBg.value = r.data.gradient
     if (r.data.is_final) {
       const rr = await getResult()

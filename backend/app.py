@@ -11,9 +11,6 @@ from calculator import WeightCalculator
 import os
 
 # ============================================================
-#  静态文件服务（集成 Vue 前端打包产物）
-#  开发时：Vite 代理 /api → 8080
-#  生产时：Flask 直接提供 / 页面
 # ============================================================
 
 # PyInstaller 打包后 _MEIPASS 指向临时解压目录
@@ -22,7 +19,6 @@ if getattr(sys, 'frozen', False):
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 优先找 frontend/dist，找不到就找 static
 STATIC_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend', 'dist')
 if not os.path.exists(STATIC_DIR):
     STATIC_DIR = os.path.join(BASE_DIR, 'static')
@@ -50,7 +46,6 @@ CORS(app)
 engine = NPFJEngine()
 calc = WeightCalculator()
 
-# 内存会话存储
 _sessions = {}
 
 
@@ -121,12 +116,10 @@ def submit_pool(pool_id):
     if len(answers) != 5:
         return jsonify({"error": f"需要 5 个答案，收到 {len(answers)} 个"}), 400
 
-    # 路由判定
     result = engine.submit_pool_answers(sess, pool_id, answers)
     if result is None:
         return jsonify({"error": "提交失败"}), 400
 
-    # 权重累加（独立于路由）
     questions = engine.pools.get(str(pool_id), {}).get("questions", [])
     for i, ans in enumerate(answers):
         if i < len(questions):
@@ -170,7 +163,6 @@ def get_result():
     if result is None:
         return jsonify({"error": "结果生成失败"}), 500
 
-    # 补充权重计算结果
     wres = calc.compute_all(sess["weights"], stage=3)
     result["radar_data"] = wres["radar"]
     result["color"] = wres["color"]
