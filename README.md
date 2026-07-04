@@ -10,14 +10,13 @@
 ## 目录
 1. [项目简介](#项目简介)
 2. [核心创新](#核心创新)
-3. [快速启动](#快速启动)
-4. [详细运行步骤](#详细运行步骤)
-5. [项目结构](#项目结构)
-6. [API 接口文档](#api-接口文档)
-7. [题库格式说明](#题库格式说明)
-8. [前端页面说明](#前端页面说明)
-9. [团队分工](#团队分工)
-10. [常见问题](#常见问题)
+3. [使用方式](#使用方式)
+4. [项目结构](#项目结构)
+5. [API 接口文档](#api-接口文档)
+6. [题库格式说明](#题库格式说明)
+7. [前端页面说明](#前端页面说明)
+8. [团队分工](#团队分工)
+9. [常见问题](#常见问题)
 
 ---
 
@@ -65,68 +64,93 @@ Stage 4 (输出格式) ── 5 题 ── 答完 → 左走 J / 右走 W
 
 ---
 
-## 快速启动（推荐）
+## 使用方式
 
-### 前提条件
+本项目支持四种运行模式，根据你的场景选一个就行。
 
-- Python 3.10+（[下载](https://www.python.org/downloads/)）
+---
 
-### 一行命令启动（🔥 一体模式）
+### 🅰 一体模式（老师验收用）
+
+> **开箱即用，一个命令跑全部。** 不需要 Node.js。
 
 ```bash
-pip install flask flask-cors   # 首次需要，安装后端依赖
-python run.py                  # 一键启动！
+pip install flask flask-cors   # 首次运行
+python run.py                  # 一键启动
 ```
 
-浏览器打开 **http://localhost:8080**，就能看到测试首页了。
+浏览器打开 **http://localhost:8080**。
 
-> 如果遇到 `ModuleNotFoundError: No module named 'flask'`，先执行 `pip install flask flask-cors`。
+**适用**：老师评分验收、展示演示、下载 release 分支直接跑。
 
-### 分步启动（开发用）
+**原理**：Flask 同时托管后端 API + 前端静态文件，`frontend/dist/` 已预编译。
 
-```bash
-# 终端 1：启动后端
-cd backend
-pip install flask flask-cors
-python app.py
-
-# 终端 2：启动前端（需要 Node.js）
-cd frontend
-npm install
-npm run dev
+```
+run.py → Flask
+              ├── /api/*       → 后端答题引擎
+              ├── /assets/*    → 前端 JS/CSS
+              └── /*           → 前端页面（SPA fallback）
 ```
 
 ---
 
-## 构建一体包（提交作业用）
+### 🅱 开发模式（团队协作用）
 
-如果想得到一个单文件启动的交付包，执行以下命令：
+> **前后端分离，改了哪边 hot reload 哪边。** 需要 Node.js。
 
 ```bash
-# 1. 构建前端（需要 Node.js）
-cd frontend
-npm install
-npm run build
+# 终端 1：后端（端口 8080）
+cd backend && pip install flask flask-cors && python app.py
 
-# 2. 回到项目根目录，直接启动（前端已被后端一体托管）
-cd ..
-python run.py
+# 终端 2：前端（端口 3000，自动代理 /api → 8080）
+cd frontend && npm install && npm run dev
 ```
 
-然后浏览器打开 **http://localhost:8080** 即可使用。
+浏览器打开 **http://localhost:3000**。
 
-打包提交时只需要以下内容：
+**适用**：日常开发、改题库、调样式。
+
+---
+
+### 🅲 交付包构建模式（交作业用）
+
+> **一键打包成 zip，老师解压即用。**
+
+```bash
+# macOS / Linux
+bash build.sh
+
+# Windows
+双击 build.bat
+```
+
+在项目根目录生成 `NPFJ-交付包.zip`：
 
 ```
-组号-题目二.zip/
-├── run.py                  <- 🏁 入口：python run.py
-├── backend/                <- Python 后端
-│   ├── app.py, engine.py, calculator.py, ...
-│   └── requirements.txt
-├── frontend/
-│   └── dist/               <- 编译好的前端（npm run build 产物）
-└── docs/                   <- 报告素材
+NPFJ-交付包.zip /
+├── run.py               ← python run.py 启动
+├── backend/             ← Python 后端 + 题库
+├── frontend/dist/       ← 编译好的前端
+└── docs/                ← 报告素材
 ```
+
+**脚本做的事**：`npm run build` → 收集必要文件 → 清理 __pycache__ → 打包 zip
+
+**适用**：提交最终作业。
+
+---
+
+### 🅳 纯 API 模式（调试用）
+
+> **没有前端页面，只有后端接口。**
+
+```bash
+cd backend && pip install flask flask-cors && python app.py
+```
+
+浏览器打开 `http://localhost:8080/api/health` 验证。
+
+**适用**：Postman 调试、测试题库数据、后端逻辑排查。
 
 ---
 
