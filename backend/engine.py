@@ -32,17 +32,6 @@ ANALYSIS_REPORTS_PATH = os.path.join(ROOT, "reports.json")
 
 POOLS_PATH = os.path.join(ROOT, "pools.json")
 
-
-# ============================================================
-#  16 种人格类型描述（纯心理学中性描述，无贬义）
-#  按路径组合 [N/S][P/L][F/R][J/W] 排列
-# ============================================================
-
-# ============================================================
-#  16 种人格分析报告（约 300-400 字）
-#  放在结果页人格类型和五维图下方
-# ============================================================
-# 分析报告从 reports.json 加载（解耦）
 ANALYSIS_REPORTS = None
 def _load_reports():
     global ANALYSIS_REPORTS
@@ -57,7 +46,6 @@ def _load_reports():
     return ANALYSIS_REPORTS
 
 PERSONALITY_MAP = {
-    # I 系（外放表达）
     "I_P_A_D": ("IPAD", "逻辑爆破者",
         "评论区的长文战神。看到逻辑漏洞会忍不住拆解，享受思辨本身带来的快感。不是为了赢，是为了「说清楚」。"),
     "I_P_A_F": ("IPAF", "精准评论者",
@@ -74,7 +62,6 @@ PERSONALITY_MAP = {
         "安静但有深度。他的表达不是辩论，是倾诉。写长篇感受不是为了说服谁，是为了记录自己被打动的瞬间。"),
     "I_S_C_F": ("ISCF", "接梗王",
         "不主动挑事，但谁挑事他都接得住。点赞收藏转发表情包，轻量互动让气氛热起来。"),
-    # R 系（内收克制）
     "R_P_A_D": ("RPAD", "冷静拆解者",
         "标准理性分析用户。不轻易发言，但一旦发言就准备充分。情绪化的言论无法带偏他——他只在乎逻辑。"),
     "R_P_A_F": ("RPAF", "轻量拆解者",
@@ -93,27 +80,23 @@ PERSONALITY_MAP = {
         "纯浏览型用户。互联网的隐形人。不点赞不评论不转发，唯一存在的证据就是DAU里的一个数字。"),
 }
 
-# 四个维度的字母映射（路径方向 → 人格字母）
-# Stage 1: L=I, R=R  （能量表达：外放/内收）
-# Stage 2: L=P, R=S  （参与方式：主动/观察）
-# Stage 3: L=A, R=C  （认知方式：分析/语境）
-# Stage 4: L=D, R=F  （表达方式：深度/碎片）
 DIM_LETTERS = [
-    {"L": "I", "R": "R"},  # 第 1 阶：外放 / 内收
-    {"L": "P", "R": "S"},  # 第 2 阶：主动参与 / 观察
-    {"L": "A", "R": "C"},  # 第 3 阶：分析拆解 / 语境共情
-    {"L": "D", "R": "F"},  # 第 4 阶：深度钻研 / 碎片广览
+    {"L": "I", "R": "R"},
+
+    {"L": "P", "R": "S"},
+
+    {"L": "A", "R": "C"},
+
+    {"L": "D", "R": "F"},
+
 ]
 
-
 class NPFJEngine:
-    """NPFJ 二分树路由引擎"""
 
     def __init__(self):
         self.pools = self._load_pools()
 
     def _load_pools(self) -> dict:
-        """加载题库 JSON"""
         if not os.path.exists(POOLS_PATH):
             return {}
         with open(POOLS_PATH, "r", encoding="utf-8") as f:
@@ -121,7 +104,6 @@ class NPFJEngine:
         return data.get("pools", {})
 
     def get_meta(self) -> dict:
-        """返回题库元信息"""
         if not os.path.exists(POOLS_PATH):
             return {}
         with open(POOLS_PATH, "r", encoding="utf-8") as f:
@@ -129,13 +111,17 @@ class NPFJEngine:
         return data.get("meta", {})
 
     def create_session(self) -> dict:
-        """创建新会话（用户开始测试时调用）"""
         return {
-            "path": [],               # 路由路径，如 ["L", "R", "L"]
-            "pool_history": [1],      # 走过的题池，从 1（能量开关）开始
-            "current_pool": 1,        # 当前题池 ID
-            "weights": [0, 0, 0, 0, 0],  # 五维权重累加
-            "done": False,            # 是否已完成
+            "path": [],
+
+            "pool_history": [1],
+
+            "current_pool": 1,
+
+            "weights": [0, 0, 0, 0, 0],
+
+            "done": False,
+
         }
 
     def get_pool_questions(self, pool_id: int) -> Optional[list]:
@@ -163,7 +149,6 @@ class NPFJEngine:
         return safe_questions
 
     def get_pool_info(self, pool_id: int) -> Optional[dict]:
-        """返回题池信息（不含题目细节）"""
         pool = self.pools.get(str(pool_id))
         if not pool:
             return None
@@ -185,10 +170,14 @@ class NPFJEngine:
 
         返回：
             {
-                "next_pool": int | None,    # 下一题池 ID，None 表示已完成
-                "stage": int,               # 当前阶段
-                "is_final": bool,           # 是否已完成所有阶段
-                "route_result": str,        # 本阶段路由结果（L/R）
+                "next_pool": int | None,
+
+                "stage": int,
+
+                "is_final": bool,
+
+                "route_result": str,
+
             }
         """
         pool = self.pools.get(str(pool_id))
@@ -199,7 +188,6 @@ class NPFJEngine:
         if len(answers) != len(questions):
             return None
 
-        # 统计路由方向（引擎只负责路由，权重由 calculator.py 处理）
         route_counts = {"L": 0, "R": 0}
         for i, ans in enumerate(answers):
             q_data = questions[i]
@@ -207,11 +195,9 @@ class NPFJEngine:
             label = opt["route"]
             route_counts[label] = route_counts.get(label, 0) + 1
 
-        # 路由：多数决
         route_result = "L" if route_counts.get("L", 0) >= route_counts.get("R", 0) else "R"
         session["path"].append(route_result)
 
-        # 根据 route_map 确定下一题池
         route_map = pool.get("route_map", {})
         next_pool_str = route_map.get(route_result)
 
@@ -219,12 +205,10 @@ class NPFJEngine:
         is_final = False
 
         if next_pool_str is None:
-            # Stage 0（基准校准）：固定路由到 Stage 1（pool 1）
             next_pool = 1
         elif isinstance(next_pool_str, int):
             next_pool = next_pool_str
         elif next_pool_str in ("D", "F", "J", "W"):
-            # Stage 4：最终决出，没有下一题池
             is_final = True
             next_pool = None
 
@@ -262,19 +246,15 @@ class NPFJEngine:
         if not session["done"]:
             return None
 
-        # 从路径生成 4 位字母
         path = session["path"]  # ["L", "L", "L", "L", "L"]
-        # 路径正好 4 步（Stage 1-4），全部用于人格判定
         letters = []
         for i, direction in enumerate(path):
             if i < len(DIM_LETTERS):
                 letters.append(DIM_LETTERS[i].get(direction, "?"))
-        type_code = "".join(letters)  # 如 "NPLF"
+        type_code = "".join(letters)
 
-        # 构建 PERSONALITY_MAP 的查询键："N_P_L_F"
         map_key = "_".join(letters)
 
-        # 获取人格描述
         personality = PERSONALITY_MAP.get(map_key)
 
         if personality:
@@ -283,10 +263,8 @@ class NPFJEngine:
             title = "未命名人格"
             desc = "描述待补充"
 
-        # 分析报告
         report = _load_reports().get(map_key, "暂无分析报告")
 
-        # 生成维度信息
         dim_names = self.get_meta().get("dimensions", ["D1", "D2", "D3", "D4"])
         dim_labels = self.get_meta().get("dimension_names", ["维度一", "维度二", "维度三", "维度四"])
         dimensions = []
@@ -296,8 +274,6 @@ class NPFJEngine:
             opposite = "R" if direction == "L" else "L"
             opp_letter = DIM_LETTERS[i].get(opposite, "?")
 
-            # 为每个方向给一个分布分数（基于路径确定性）
-            # 这里简化：L 方向给 7-9 分，R 方向给 3-5 分
             base = 8 if direction == "L" else 4
             dimensions.append({
                 "name": dim_labels[i] if i < len(dim_labels) else dim_names[i],
@@ -306,7 +282,6 @@ class NPFJEngine:
                 "opposite": opp_letter,
             })
 
-        # 路径字母表示
         stage_names = ["能量表达", "参与方式", "认知方式", "表达方式"]
         path_letters = []
         for i, direction in enumerate(path):

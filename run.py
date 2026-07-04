@@ -13,7 +13,6 @@ NPFJ — Network Personality Factor Indicator
 import sys
 import os
 
-# 将 backend 加入模块搜索路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
 from backend.app import app

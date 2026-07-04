@@ -1,6 +1,3 @@
-<!--
-  App.vue —— 根组件，包裹 Naive UI 深色主题
--->
 <template>
   <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
     <n-message-provider>
