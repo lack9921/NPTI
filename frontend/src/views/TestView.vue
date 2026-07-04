@@ -94,7 +94,7 @@ const currentQuestions = ref([])
 const currentQIndex = ref(0)
 const answers = ref([])
 const selectedAnswer = ref(null)
-const currentStepIndex = ref(0)
+const currentStepIndex = ref(1)
 const loading = ref(true)
 const submitting = ref(false)
 const errorMsg = ref('')
@@ -140,7 +140,7 @@ async function loadPool(id) {
     currentQIndex.value = 0
     answers.value = []
     selectedAnswer.value = null
-    currentStepIndex.value = Math.max(0, d.stage - 1)
+    currentStepIndex.value = d.stage
   } catch { errorMsg.value = '⚠️ 加载失败' }
   loading.value = false
 }
