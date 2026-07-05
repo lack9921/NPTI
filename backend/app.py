@@ -60,10 +60,6 @@ def create_session():
 
 @app.route("/api/pool/<int:pool_id>/submit", methods=["POST"])
 def submit_pool(pool_id):
-    """
-    提交一组答案。
-    路由由 engine.py 处理，权重由 calculator.py 处理。
-    """
     data = request.get_json()
     if not data or "answers" not in data or "session_id" not in data:
         return jsonify({"error": "缺少 session_id 或 answers 字段"}), 400
@@ -104,10 +100,6 @@ def submit_pool(pool_id):
 
 @app.route("/api/result", methods=["POST"])
 def get_result():
-    """
-    最终结算。
-    人格信息由 engine.py 生成，雷达图和颜色由 calculator.py 生成。
-    """
     data = request.get_json()
     if not data or "session_id" not in data:
         return jsonify({"error": "缺少 session_id"}), 400
@@ -137,11 +129,6 @@ def serve_index():
 
 @app.route("/<path:path>")
 def serve_spa(path):
-    """
-    SPA 全路由处理：
-      1. 如果是 dist 中的静态文件（JS/CSS 等），直接返回
-      2. 其余所有非 /api/ 路径 → index.html（SPA fallback）
-    """
     if not _DIST_EXISTS:
         return serve_index()
     filepath = os.path.join(_DIST_DIR, path)

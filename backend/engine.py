@@ -99,10 +99,6 @@ class NPFJEngine:
         }
 
     def get_pool_questions(self, pool_id):
-        """
-        获取指定题池的题目（给前端用，过滤掉权重等内部数据）
-        返回每题的 id、text、选项文字（不含 route_label 和 weights）
-        """
         pool = self.pools.get(str(pool_id))
         if not pool:
             return None
@@ -134,22 +130,6 @@ class NPFJEngine:
         }
 
     def submit_pool_answers(self, session, pool_id, answers):
-        """
-        提交当前题池的 5 个答案，处理路由和权重累加
-
-        参数：
-            session: 当前用户会话
-            pool_id: 当前题池 ID
-            answers: ["A", "B", "A", "A", "B"] 长度 5 的列表
-
-        返回：
-            {
-                "next_pool": None,
-                "stage": 0,
-                "is_final": False,
-                "route_result": "",
-            }
-        """
         pool = self.pools.get(str(pool_id))
         if not pool:
             return None
@@ -197,22 +177,6 @@ class NPFJEngine:
         }
 
     def finalize_result(self, session):
-        """
-        最终结算：生成人格类型 + 五维雷达图数据
-
-        参数：
-            session: 已完成所有阶段的会话
-
-        返回：
-            {
-                "type": "NPFJ",
-                "type_title": "全栈掌控者",
-                "description": "...",
-                "path": ["L", "R", "L", "R"],
-                "dimensions": [...],
-                "radar_data": [...],
-            }
-        """
         if not session["done"]:
             return None
 

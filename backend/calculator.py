@@ -6,22 +6,11 @@ class WeightCalculator:
         self.total_questions = 20
 
     def accumulate(self, state, option_weights):
-        """
-        累加一道题的权重到状态中。
-        state: 当前累积权重 [w0, w1, w2, w3, w4]
-        option_weights: 本题选项的权重 [w0, w1, w2, w3, w4]
-        返回新的 state。
-        """
         for i in range(5):
             state[i] += option_weights[i]
         return state
 
     def compute_radar(self, state):
-        """
-        从累积权重计算五维雷达图数据（归一化到 0-100）。
-        
-        以实际累积值的最大值为基准，让图表撑满显示区域。
-        """
         if not state or len(state) < 5:
             return [{"name": n, "value": 0} for n in self.dim_names]
         
@@ -35,18 +24,6 @@ class WeightCalculator:
         return radar
 
     def compute_color(self, state):
-        """
-        从累积权重计算背景颜色。
-        
-        当前公式：每维权重映射到 RGB 通道。
-        你可以换成任何配色算法——HSL 插值、色相偏移、粒子系统映射等。
-        
-        映射规则：
-          - 压力解压阀 → R 通道
-          - 社交磁场 → G 通道
-          - 脑力劳作 → B 通道
-          - 精神续航和秩序洁癖混合影响饱和度和偏移
-        """
         if not state or len(state) < 5:
             return "rgb(15, 12, 41)"
 
@@ -70,10 +47,6 @@ class WeightCalculator:
         return f"rgb({r},{g},{b})"
 
     def compute_color_gradient(self, state, stage):
-        """
-        生成阶段背景渐变 CSS。
-        结合阶段基色和权重累积色。
-        """
         base_dark = [
             (10, 15, 35),
 
@@ -106,21 +79,6 @@ class WeightCalculator:
         )
 
     def compute_all(self, state, stage=0):
-        """
-        一次性计算所有基于权重的输出。
-        
-        返回：
-        {
-            "radar": [...],
-
-            "color": "rgb(...)",
-
-            "gradient": "linear-gradient(...)",
-
-        }
-        
-        未来扩展：在此方法中加入新的计算项即可。
-        """
         return {
             "radar": self.compute_radar(state),
             "color": self.compute_color(state),
