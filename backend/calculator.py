@@ -1,12 +1,3 @@
-"""
-calculator.py —— 权重计算引擎
-
-与 engine.py（路由引擎）完全解耦。
-此文件仅负责：五维雷达图计算 + 背景染色 + 未来任何基于权重的扩展。
-
-你可以在这里引入任意高级数学公式。
-"""
-
 class WeightCalculator:
 
     def __init__(self):
@@ -14,7 +5,7 @@ class WeightCalculator:
         self.max_per_question = 2
         self.total_questions = 20
 
-    def accumulate(self, state: list, option_weights: list) -> list:
+    def accumulate(self, state, option_weights):
         """
         累加一道题的权重到状态中。
         state: 当前累积权重 [w0, w1, w2, w3, w4]
@@ -25,7 +16,7 @@ class WeightCalculator:
             state[i] += option_weights[i]
         return state
 
-    def compute_radar(self, state: list) -> list:
+    def compute_radar(self, state):
         """
         从累积权重计算五维雷达图数据（归一化到 0-100）。
         
@@ -43,7 +34,7 @@ class WeightCalculator:
             radar.append({"name": self.dim_names[i], "value": normalized})
         return radar
 
-    def compute_color(self, state: list) -> str:
+    def compute_color(self, state):
         """
         从累积权重计算背景颜色。
         
@@ -78,7 +69,7 @@ class WeightCalculator:
 
         return f"rgb({r},{g},{b})"
 
-    def compute_color_gradient(self, state: list, stage: int) -> str:
+    def compute_color_gradient(self, state, stage):
         """
         生成阶段背景渐变 CSS。
         结合阶段基色和权重累积色。
@@ -114,7 +105,7 @@ class WeightCalculator:
             f"rgb({mixed_r},{mixed_g},{mixed_b}) 100%)"
         )
 
-    def compute_all(self, state: list, stage: int = 0) -> dict:
+    def compute_all(self, state, stage=0):
         """
         一次性计算所有基于权重的输出。
         

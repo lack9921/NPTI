@@ -1,15 +1,3 @@
-"""
-NPFJ — Network Personality Factor Indicator
-============================================
-大一程序设计实践项目 · 选题二：MBTI 测试系统
-
-一键启动（确保已安装 flask 和 flask-cors）：
-    pip install flask flask-cors
-    python run.py
-
-然后在浏览器打开 http://localhost:8080
-"""
-
 import sys
 import os
 

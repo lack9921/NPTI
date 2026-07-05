@@ -1,15 +1,3 @@
-"""
-NPFJ 后端 API — Flask 实现
-
-权重计算由独立的 calculator.py 处理，与路由引擎解耦。
-
-一体运行模式：
-  python run.py
-
-  python backend/app.py
-
-"""
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from engine import NPFJEngine
